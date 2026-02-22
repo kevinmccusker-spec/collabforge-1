@@ -52,7 +52,7 @@ export default function AuthModal({ onClose }) {
         <button
           onClick={onClose}
           style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--cream)', fontSize: '1.5rem', cursor: 'pointer' }}
-        >Ã—</button>
+        >×</button>
 
         <h2 className="mono" style={{ color: 'var(--burnt-orange)', marginBottom: '1.5rem', fontSize: '1.5rem' }}>
           {mode === 'signup' ? 'Join CollabForge' : 'Welcome Back'}
@@ -89,14 +89,14 @@ export default function AuthModal({ onClose }) {
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+              placeholder="••••••••"
               required
               minLength={6}
             />
           </div>
 
-          {error && <p className="error">âš  {error}</p>}
-          {success && <p className="success">âœ“ {success}</p>}
+          {error && <p className="error">⚠ {error}</p>}
+          {success && <p className="success">✓ {success}</p>}
 
           <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', marginTop: '0.5rem' }}>
             {loading ? 'Please wait...' : mode === 'signup' ? 'Create Account' : 'Sign In'}
