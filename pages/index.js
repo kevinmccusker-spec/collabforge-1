@@ -31,7 +31,9 @@ export default function Home() {
       `)
       .order('created_at', { ascending: false })
 
-    if (!error && data) {
+    console.log('songs query error:', error)
+console.log('songs query data:', data)
+if (!error && data) {
       const formatted = data.map(song => ({
         ...song,
         originalAuthor: song.profiles?.username,
