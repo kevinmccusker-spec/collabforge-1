@@ -22,7 +22,11 @@ export default function Home() {
       .from('songs')
       .select(`
         *,
-        profiles:user_id(username),
+        versions(
+  *,
+  profiles:user_id(username),
+  version_likes(count)
+)
         versions(
           *,
           version_likes(count)
@@ -39,7 +43,7 @@ if (!error && data) {
         versions: (song.versions || [])
           .map(v => ({
             ...v,
-            creator: v.user_id,
+            creator: v.profiles?.username,
             likeCount: v.version_likes?.[0]?.count || 0
           }))
           .sort((a, b) => {
