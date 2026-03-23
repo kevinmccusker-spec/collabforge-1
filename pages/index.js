@@ -25,7 +25,6 @@ export default function Home() {
         profiles:user_id(username),
         versions(
           *,
-          profiles:user_id(username),
           version_likes(count)
         )
       `)
@@ -40,7 +39,7 @@ if (!error && data) {
         versions: (song.versions || [])
           .map(v => ({
             ...v,
-            creator: v.profiles?.username,
+            creator: v.user_id,
             likeCount: v.version_likes?.[0]?.count || 0
           }))
           .sort((a, b) => {
