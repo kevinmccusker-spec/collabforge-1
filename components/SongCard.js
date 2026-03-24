@@ -118,9 +118,9 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
           onCancel={() => setShowRemix(false)}
         />
       )}
-    </>
-  )}
-</div>
+      </>
+    )}
+    </div>
   )
 }
 
