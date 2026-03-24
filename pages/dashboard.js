@@ -89,11 +89,11 @@ export default function Dashboard() {
               <div>
                 <p className="mono" style={{ color: 'var(--burnt-orange)', marginBottom: '0.25rem' }}>{song.title}</p>
                 <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.6 }}>
-                  {song.versions?.length || 0} versions Â·
-                  {song.is_complete ? ' âœ“ Complete' : ' In progress'}
+                  {song.versions?.length || 0} version{song.versions?.length !== 1 ? 's' : ''} ·
+                  {song.is_complete ? ' ✓ Complete' : ' In progress'}
                 </p>
               </div>
-              <Link href={`/#${song.id}`} className="btn btn-sm">View â†’</Link>
+              <Link href={`/#${song.id}`} className="btn btn-sm">View →</Link>
             </div>
           ))}
         </section>
@@ -110,10 +110,10 @@ export default function Dashboard() {
                   [{v.version_type?.toUpperCase() || 'REMIX'}] {v.songs?.title}
                 </p>
                 <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.6 }}>
-                  {v.version_likes?.[0]?.count || 0} likes Â· original by @{v.songs?.profiles?.username}
+                  {v.version_likes?.[0]?.count || 0} likes · original by @{v.songs?.profiles?.username}
                 </p>
               </div>
-              <span className="mono" style={{ fontSize: '0.75rem', opacity: 0.5 }}>{v.notes || 'â€”'}</span>
+              <span className="mono" style={{ fontSize: '0.75rem', opacity: 0.5 }}>{v.notes || '—'}</span>
             </div>
           ))}
         </section>
