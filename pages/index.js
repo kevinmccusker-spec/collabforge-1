@@ -29,7 +29,6 @@ export default function Home() {
   )
 `)
       .order('created_at', { ascending: false })
-
     console.log('songs query error:', error)
 console.log('songs query data:', data)
 if (!error && data) {
