@@ -128,10 +128,10 @@ function VersionItem({ version, onLike, canLike }) {
       ...(version.is_original ? { background: 'rgba(255,200,87,0.07)' } : {})
     }}>
       {version.is_original && (
-        <span className="mono" style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', fontSize: '0.65rem', color: 'var(--accent-yellow)', background: 'var(--deep-black)', padding: '0.15rem 0.4rem', letterSpacing: 1 }}>
-          ORIGINAL
-        </span>
-      )}
+  <span className="mono" style={{ position: 'absolute', top: '0.5rem', left: '0.5rem', fontSize: '0.65rem', color: 'var(--accent-yellow)', background: 'var(--deep-black)', padding: '0.15rem 0.4rem', letterSpacing: 1 }}>
+    ORIGINAL
+  </span>
+)}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
         <div className="mono" style={{ fontSize: '0.85rem' }}>
