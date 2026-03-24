@@ -7,6 +7,7 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
   const [showAll, setShowAll] = useState(false)
   const [showRemix, setShowRemix] = useState(false)
   const [liking, setLiking] = useState(false)
+  const [expanded, setExpanded] = useState(false)
 
   const topVersions = song.versions.slice(0, 11)
   const hiddenVersions = song.versions.slice(11)
@@ -62,21 +63,31 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
       </div>
 
       {/* Versions */}
-      <div style={{ borderTop: '1px solid rgba(255,107,53,0.25)', paddingTop: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-          <span className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '1rem' }}>
-            {song.versions.length} version{song.versions.length !== 1 ? 's' : ''}
-          </span>
-          {user ? (
-            <button className="btn btn-sm" onClick={() => setShowRemix(!showRemix)}>
-              {showRemix ? 'Cancel' : '+ Add Your Version'}
-            </button>
-          ) : (
-            <button className="btn btn-sm" onClick={onAuthRequired}>+ Add Your Version</button>
-          )}
-        </div>
+      <div 
+  style={{ borderTop: '1px solid rgba(255,107,53,0.25)', paddingTop: '1rem', cursor: 'pointer' }}
+  onClick={() => !expanded && setExpanded(true)}
+>
+  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <span className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '1rem' }}>
+      {song.versions.length} version{song.versions.length !== 1 ? 's' : ''}
+    </span>
+    <div style={{ display: 'flex', gap: '0.75rem' }}>
+      {expanded && (user ? (
+        <button className="btn btn-sm" onClick={e => { e.stopPropagation(); setShowRemix(!showRemix) }}>
+          {showRemix ? 'Cancel' : '+ Add Your Version'}
+        </button>
+      ) : (
+        <button className="btn btn-sm" onClick={e => { e.stopPropagation(); onAuthRequired() }}>+ Add Your Version</button>
+      ))}
+      <button className="btn btn-sm" onClick={e => { e.stopPropagation(); setExpanded(!expanded) }}>
+        {expanded ? 'Collapse ↑' : 'View ↓'}
+      </button>
+    </div>
+  </div>
 
-        {/* Version List */}
+  {expanded && (
+    <>
+      <div style={{ marginTop: '1.25rem' }}>
         {topVersions.map(version => (
           <VersionItem
             key={version.id}
@@ -85,7 +96,6 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
             canLike={!!user}
           />
         ))}
-
         {hiddenVersions.length > 0 && (
           <>
             <div style={{ textAlign: 'center', margin: '1rem 0' }}>
@@ -103,19 +113,17 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
             ))}
           </>
         )}
-
-        {/* Remix Form */}
-        {showRemix && (
-          <RemixForm
-            songId={song.id}
-            onSuccess={() => { setShowRemix(false); onUpdate() }}
-            onCancel={() => setShowRemix(false)}
-          />
-        )}
       </div>
-    </div>
-  )
-}
+      {showRemix && (
+        <RemixForm
+          songId={song.id}
+          onSuccess={() => { setShowRemix(false); onUpdate() }}
+          onCancel={() => setShowRemix(false)}
+        />
+      )}
+    </>
+  )}
+</div>
 
 function VersionItem({ version, onLike, canLike }) {
   return (
