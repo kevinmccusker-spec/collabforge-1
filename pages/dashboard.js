@@ -64,7 +64,7 @@ export default function Dashboard() {
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '3rem' }}>
           {[
-            { label: 'Songs Released', value: songs.length },
+            { label: 'Songs Uploaded', value: songs.length },
             { label: 'Versions Created', value: versions.length },
             { label: 'Total Likes', value: totalLikes },
           ].map(stat => (
