@@ -228,8 +228,8 @@ function RemixForm({ songId, onSuccess, onCancel }) {
       <form onSubmit={submit} style={{ display: 'grid', gap: '0.75rem' }}>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-            <input type="radio" value="alter" checked={versionType === 'alter'} onChange={() => setVersionType('alter')} />
-            <span className="mono" style={{ fontSize: '0.8rem' }}>Alter</span>
+            <input type="radio" value="cowrite" checked={versionType === 'cowrite'} onChange={() => setVersionType('cowrite')} />
+            <span className="mono" style={{ fontSize: '0.8rem' }}>Co-write</span>
           </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
             <input type="radio" value="cover" checked={versionType === 'cover'} onChange={() => setVersionType('cover')} />
