@@ -21,14 +21,13 @@ export default function Home() {
     const { data, error } = await supabase
       .from('songs')
       .select(`
-        *,
-        versions(
   *,
-  profiles:user_id(username),
-  version_likes(count)
-)
-        versions(
-          *,
+  versions(
+    *,
+    profiles:user_id(username),
+    version_likes(count)
+  )
+`)
           version_likes(count)
         )
       `)
@@ -39,7 +38,7 @@ console.log('songs query data:', data)
 if (!error && data) {
       const formatted = data.map(song => ({
         ...song,
-        originalAuthor: song.profiles?.username,
+        originalAuthor: song.username,
         versions: (song.versions || [])
           .map(v => ({
             ...v,
