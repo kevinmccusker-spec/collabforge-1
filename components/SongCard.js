@@ -63,10 +63,7 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
       </div>
 
       {/* Versions */}
-      <div 
-  style={{ borderTop: '1px solid rgba(255,107,53,0.25)', paddingTop: '1rem', cursor: 'pointer' }}
-  onClick={() => !expanded && setExpanded(true)}
->
+      <div style={{ borderTop: '1px solid rgba(255,107,53,0.25)', paddingTop: '1rem', cursor: 'pointer' }} onClick={() => !expanded && setExpanded(true)}>
   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
     <span className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '1rem' }}>
       {song.versions.length} version{song.versions.length !== 1 ? 's' : ''}
