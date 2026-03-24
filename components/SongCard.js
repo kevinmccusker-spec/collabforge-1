@@ -121,6 +121,8 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
     </>
   )}
 </div>
+  )
+}
 
 function VersionItem({ version, onLike, canLike }) {
   return (
