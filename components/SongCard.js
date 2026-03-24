@@ -180,7 +180,7 @@ function RemixForm({ songId, onSuccess, onCancel }) {
   const { user } = useAuth()
   const [file, setFile] = useState(null)
   const [notes, setNotes] = useState('')
-  const [versionType, setVersionType] = useState('alter')
+  const [versionType, setVersionType] = useState('cowrite')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
