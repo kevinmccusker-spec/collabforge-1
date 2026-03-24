@@ -28,9 +28,6 @@ export default function Home() {
     version_likes(count)
   )
 `)
-          version_likes(count)
-        )
-      `)
       .order('created_at', { ascending: false })
 
     console.log('songs query error:', error)
