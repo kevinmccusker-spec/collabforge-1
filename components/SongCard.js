@@ -62,14 +62,13 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
       {/* Versions */}
       <div style={{ borderTop: '1px solid rgba(255,107,53,0.25)', paddingTop: '1rem' }}>
         
-        {/* Always show original */}
-        {song.versions.filter(v => v.is_original).map(version => (
-          <VersionItem
-            key={version.id}
-            version={version}
-            onLike={() => toggleLike(version.id, version.likeCount)}
-            canLike={!!user}
-          />
+      {/* Always show original */}
+      {song.versions.filter(v => v.is_original).map(version => (
+      <div key={version.id} style={{ background: 'rgba(10,10,10,0.6)', padding: '0.75rem', borderLeft: '2px solid var(--accent-yellow)' }}>
+      <audio controls style={{ width: '100%' }}>
+      <source src={version.audio_url} />
+      </audio>
+      </div>
         ))}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem' }}>
