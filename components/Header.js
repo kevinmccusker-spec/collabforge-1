@@ -6,8 +6,9 @@ export default function Header({ onSignIn, onUpload }) {
   const { user, profile } = useAuth()
 
   async function signOut() {
-    await supabase.auth.signOut()
-  }
+  await supabase.auth.signOut()
+  window.location.href = '/'
+}
 
   return (
     <header style={{
