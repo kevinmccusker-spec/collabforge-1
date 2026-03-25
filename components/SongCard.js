@@ -49,17 +49,14 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
       )}
 
       {/* Song Header */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h2 className="mono" style={{ fontSize: '1.4rem', color: 'var(--burnt-orange)', letterSpacing: '-1px', marginBottom: '0.4rem' }}>
+      <div style={{ marginBottom: '0.5rem' }}>
+        <h2 className="mono" style={{ fontSize: '1.1rem', color: 'var(--burnt-orange)', letterSpacing: '-1px', marginBottom: '0.4rem' }}>
           {song.title}
         </h2>
-        <p className="mono" style={{ fontSize: '0.8rem', opacity: 0.6 }}>
-          by @{song.originalAuthor} · {formatDate(song.created_at)}
-          {song.is_complete && ' · Ready for distribution'}
-        </p>
-        {song.description && (
-          <p style={{ marginTop: '0.75rem', lineHeight: 1.7, fontSize: '1.05rem' }}>{song.description}</p>
-        )}
+        
+        {song.description && expanded && (
+      <p style={{ marginTop: '0.5rem', lineHeight: 1.6, fontSize: '0.95rem' }}>{song.description}</p>
+      )}
       </div>
 
       {/* Versions */}
@@ -76,9 +73,9 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
         ))}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem' }}>
-          <span className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '1rem' }}>
-            {song.versions.filter(v => !v.is_original).length} collaboration{song.versions.filter(v => !v.is_original).length !== 1 ? 's' : ''}
-          </span>
+          <span className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '0.85rem' }}>
+        {song.versions.filter(v => !v.is_original).length} collaboration{song.versions.filter(v => !v.is_original).length !== 1 ? 's' : ''} · by @{song.originalAuthor} · {formatDate(song.created_at)}{song.is_complete && ' · Ready for distribution'}
+      </span>
           <div style={{ display: 'flex', gap: '0.75rem' }}>
             {expanded && (user ? (
               <button className="btn btn-sm" onClick={e => { e.stopPropagation(); setShowRemix(!showRemix) }}>
