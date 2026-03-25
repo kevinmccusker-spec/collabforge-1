@@ -63,66 +63,62 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
       </div>
 
       {/* Versions */}
-        <div style={{ borderTop: '1px solid rgba(255,107,53,0.25)', paddingTop: '1rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '1rem' }}>
-              {song.versions.length} version{song.versions.length !== 1 ? 's' : ''}
-            </span>
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
-              {expanded && (user ? (
-                <button className="btn btn-sm" onClick={e => { e.stopPropagation(); setShowRemix(!showRemix) }}>
-                  {showRemix ? 'Cancel' : '+ Add Your Version'}
-                </button>
-              ) : (
-                <button className="btn btn-sm" onClick={e => { e.stopPropagation(); onAuthRequired() }}>+ Add Your Version</button>
-              ))}
+      <div style={{ borderTop: '1px solid rgba(255,107,53,0.25)', paddingTop: '1rem' }}>
+        
+        {/* Always show original */}
+        {song.versions.filter(v => v.is_original).map(version => (
+          <VersionItem
+            key={version.id}
+            version={version}
+            onLike={() => toggleLike(version.id, version.likeCount)}
+            canLike={!!user}
+          />
+        ))}
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem' }}>
+          <span className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '1rem' }}>
+            {song.versions.filter(v => !v.is_original).length} collaboration{song.versions.filter(v => !v.is_original).length !== 1 ? 's' : ''}
+          </span>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            {expanded && (user ? (
+              <button className="btn btn-sm" onClick={e => { e.stopPropagation(); setShowRemix(!showRemix) }}>
+                {showRemix ? 'Cancel' : '+ Add Your Version'}
+              </button>
+            ) : (
+              <button className="btn btn-sm" onClick={e => { e.stopPropagation(); onAuthRequired() }}>+ Add Your Version</button>
+            ))}
+            {song.versions.filter(v => !v.is_original).length > 0 && (
               <button className="btn btn-sm" onClick={() => setExpanded(!expanded)}>
                 {expanded ? 'Collapse ↑' : 'View ↓'}
               </button>
-            </div>
+            )}
           </div>
-
-          {expanded && (
-            <>
-              <div style={{ marginTop: '1.25rem' }}>
-                {topVersions.map(version => (
-                  <VersionItem
-                    key={version.id}
-                    version={version}
-                    onLike={() => toggleLike(version.id, version.likeCount)}
-                    canLike={!!user}
-                  />
-                ))}
-                {hiddenVersions.length > 0 && (
-                  <>
-                    <div style={{ textAlign: 'center', margin: '1rem 0' }}>
-                      <button className="btn btn-sm" onClick={() => setShowAll(!showAll)}>
-                        {showAll ? 'Show Less' : `Show ${hiddenVersions.length} More`}
-                      </button>
-                    </div>
-                    {showAll && hiddenVersions.map(version => (
-                      <VersionItem
-                        key={version.id}
-                        version={version}
-                        onLike={() => toggleLike(version.id, version.likeCount)}
-                        canLike={!!user}
-                      />
-                    ))}
-                  </>
-                )}
-              </div>
-              {showRemix && (
-                <RemixForm
-                  songId={song.id}
-                  onSuccess={() => { setShowRemix(false); onUpdate() }}
-                  onCancel={() => setShowRemix(false)}
-                />
-              )}
-            </>
-          )}
         </div>
+
+        {expanded && (
+          <>
+            <div style={{ marginTop: '1.25rem' }}>
+              {song.versions.filter(v => !v.is_original).map(version => (
+                <VersionItem
+                  key={version.id}
+                  version={version}
+                  onLike={() => toggleLike(version.id, version.likeCount)}
+                  canLike={!!user}
+                />
+              ))}
+            </div>
+            {showRemix && (
+              <RemixForm
+                songId={song.id}
+                onSuccess={() => { setShowRemix(false); onUpdate() }}
+                onCancel={() => setShowRemix(false)}
+              />
+            )}
+          </>
+        )}
       </div>
-    )
+    </div>
+  )
 }
 
 function VersionItem({ version, onLike, canLike }) {
