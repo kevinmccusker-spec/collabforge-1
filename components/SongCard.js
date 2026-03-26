@@ -248,6 +248,11 @@ function RemixForm({ songId, onSuccess, onCancel }) {
 
         {error && <p className="error">⚠ {error}</p>}
 
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+          <input type="checkbox" required style={{ marginTop: 4, width: 16, height: 16 }} />
+          <span style={{ fontSize: '0.8rem', opacity: 0.8, lineHeight: 1.5 }}>I agree to the 50/50 split on co-writes and standard mechanical rates on covers. Unauthorized independent distribution of this collaboration is a violation of CollabForge terms and may constitute copyright infringement.</span>
+        </div>
+          
         <div style={{ display: 'flex', gap: '0.75rem' }}>
           <button type="submit" className="btn btn-primary btn-sm" disabled={loading}>
             {loading ? 'Uploading...' : 'Submit Version'}
