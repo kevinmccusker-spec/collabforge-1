@@ -82,30 +82,29 @@ export default function UploadModal({ onClose, onSuccess }) {
             You're about to release <strong>"{title}"</strong> into the world.
           </p>
           <p style={{ lineHeight: 1.8, opacity: 0.9 }}>
-            Anyone can download it, remix it, rewrite it, change the genre, make it unrecognizable.
-            You will always be credited as the original creator, but you <strong>cannot delete or veto</strong> what others do with it.
-          </p>
+            Anyone can listen, co-write, or cover it. You stay credited as the original creator on every version. Any collaborator may release their version independently — you automatically receive 50% credit and royalties on any version that builds on yours.
         </div>
 
         <div style={{ background: 'rgba(10,10,10,0.6)', padding: '1.25rem', marginBottom: '1.5rem', borderLeft: '2px dashed rgba(255,200,87,0.3)' }}>
           <p className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '0.8rem', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: 1 }}>What This Means</p>
           <ul style={{ listStyle: 'none', lineHeight: 2.2, fontSize: '1rem' }}>
             <li>✓ Your original stays pinned at the top</li>
-            <li>✓ You're credited as the original creator</li>
-            <li>✓ You earn 60% of royalties if it goes commercial</li>
-            <li style={{ color: 'var(--muted-red)', marginTop: 4 }}>✗ You cannot delete or veto remixes</li>
+            <li>✓ You're credited as the original creator on every version</li>
+            <li>✓ <li>✓ You earn 50% of royalties on every co-write</li>
+            <li>✓ <li>✓ Covers earn standard mechanical royalties through DistroKid</li>
+            <li style={{ color: 'var(--muted-red)', marginTop: 4 }}>✗ You cannot delete versions once uploaded</li>
           </ul>
         </div>
 
         <div style={{ borderLeft: '3px solid var(--accent-yellow)', padding: '1.25rem', marginBottom: '1.5rem', background: 'rgba(255,200,87,0.05)' }}>
           <p style={{ fontStyle: 'italic', lineHeight: 1.7, fontSize: '1.05rem', opacity: 0.9 }}>
-            "This is about getting the song out of your head so it stops rotting inside you. Once it's posted, it belongs to the world. You just get to watch what happens."
+            ""A song unfinished is a song unheard." Once it's posted, it belongs to the world. You just get to watch what happens."
           </p>
         </div>
 
         <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer', marginBottom: '1.5rem', lineHeight: 1.6 }}>
           <input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} style={{ marginTop: 4, width: 18, height: 18 }} />
-          <span>I understand I'm releasing this song to the community and giving up control over how it's remixed or reimagined.</span>
+          <span>I understand I'm releasing this song to the community. Co-writes split 50/50. Covers follow standard mechanical royalty rates through distribution. Unauthorized distribution of a CollabForge collaboration is a violation of these terms and may constitute copyright infringement. CollabForge reserves the right to terminate your account immediately. The original artist retains the right to pursue legal action independently.</span>
         </label>
 
         {error && <p className="error" style={{ marginBottom: '1rem' }}>⚠ {error}</p>}
