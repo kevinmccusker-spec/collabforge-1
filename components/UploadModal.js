@@ -82,7 +82,7 @@ export default function UploadModal({ onClose, onSuccess }) {
             You're about to release <strong>"{title}"</strong> into the world.
           </p>
           <p style={{ lineHeight: 1.8, opacity: 0.9 }}>
-            Anyone can listen, co-write, or cover it. You stay credited as the original creator on every version. Any collaborator may release their version independently — you automatically receive 50% credit and royalties on any version that builds on yours.
+            Anyone can listen, co-write, or cover it. You stay credited as the original creator on every version. Any collaborator may release their version independently — you automatically receive 50% credit and royalties on any version that builds on yours.</p>
         </div>
 
         <div style={{ background: 'rgba(10,10,10,0.6)', padding: '1.25rem', marginBottom: '1.5rem', borderLeft: '2px dashed rgba(255,200,87,0.3)' }}>
@@ -90,15 +90,15 @@ export default function UploadModal({ onClose, onSuccess }) {
           <ul style={{ listStyle: 'none', lineHeight: 2.2, fontSize: '1rem' }}>
             <li>✓ Your original stays pinned at the top</li>
             <li>✓ You're credited as the original creator on every version</li>
-            <li>✓ <li>✓ You earn 50% of royalties on every co-write</li>
-            <li>✓ <li>✓ Covers earn standard mechanical royalties through DistroKid</li>
+            <li>✓ You earn 50% of royalties on every co-write</li>
+            <li>✓ Covers earn standard mechanical royalties through DistroKid</li>
             <li style={{ color: 'var(--muted-red)', marginTop: 4 }}>✗ You cannot delete versions once uploaded</li>
           </ul>
         </div>
 
         <div style={{ borderLeft: '3px solid var(--accent-yellow)', padding: '1.25rem', marginBottom: '1.5rem', background: 'rgba(255,200,87,0.05)' }}>
           <p style={{ fontStyle: 'italic', lineHeight: 1.7, fontSize: '1.05rem', opacity: 0.9 }}>
-            ""A song unfinished is a song unheard." Once it's posted, it belongs to the world. You just get to watch what happens."
+            "A song unfinished is a song unheard."
           </p>
         </div>
 
