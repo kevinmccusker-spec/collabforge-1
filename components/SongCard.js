@@ -30,10 +30,6 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
     } else {
       await supabase.from('version_likes').insert({ version_id: versionId, user_id: user.id })
 
-      // Check completion (1000 likes)
-      if (currentLikes + 1 >= 1000 && !song.is_complete) {
-        await supabase.from('songs').update({ is_complete: true }).eq('id', song.id)
-      }
     }
 
     setLiking(false)
