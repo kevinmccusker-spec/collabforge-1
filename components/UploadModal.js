@@ -9,6 +9,7 @@ export default function UploadModal({ onClose, onSuccess }) {
   const [description, setDescription] = useState('')
   const [tags, setTags] = useState('')
   const [file, setFile] = useState(null)
+  const [split, setSplit] = useState('50')
   const [confirmed, setConfirmed] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -46,7 +47,7 @@ export default function UploadModal({ onClose, onSuccess }) {
       // Create song
       const { data: song, error: songErr } = await supabase
         .from('songs')
-        .insert({ title, description, user_id: user.id, is_complete: false })
+        .insert({ title, description, user_id: user.id, is_complete: false, collab_split: parseInt(split) })
         .select().single()
       if (songErr) throw songErr
 
@@ -149,7 +150,16 @@ export default function UploadModal({ onClose, onSuccess }) {
             <label className="mono" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '0.4rem', opacity: 0.8 }}>Mood / Genre Tags</label>
             <input type="text" value={tags} onChange={e => setTags(e.target.value)} placeholder="e.g. indie, sad, lo-fi, acoustic" />
           </div>
-
+          <div>
+            <label className="mono" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '0.4rem', opacity: 0.8 }}>Collaboration Split</label>
+            <select value={split} onChange={e => setSplit(e.target.value)} style={{ width: '100%' }}>
+              <option value="50">50% to collaborator (50/50)</option>
+              <option value="40">40% to collaborator (60/40)</option>
+              <option value="30">30% to collaborator (70/30)</option>
+              <option value="20">20% to collaborator (80/20)</option>
+              <option value="10">10% to collaborator (90/10)</option>
+            </select>
+          </div>
           <div style={{ border: '2px dashed var(--accent-yellow)', padding: '2rem', textAlign: 'center', position: 'relative', background: 'rgba(255,200,87,0.04)', cursor: 'pointer' }}>
             <input type="file" accept="audio/*" onChange={handleFileChange} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
             <div className="mono" style={{ color: 'var(--accent-yellow)', pointerEvents: 'none' }}>
