@@ -69,7 +69,7 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem' }}>
           <span className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '0.85rem' }}>
-        {song.versions.filter(v => !v.is_original).length} collaboration{song.versions.filter(v => !v.is_original).length !== 1 ? 's' : ''} · by @{song.originalAuthor} · {formatDate(song.created_at)}{song.is_complete && ' · Ready for distribution'}
+        {song.versions.filter(v => !v.is_original).length} collaboration{song.versions.filter(v => !v.is_original).length !== 1 ? 's' : ''} · by @{song.originalAuthor} · {formatDate(song.created_at)} · {song.collab_split || 50}% to collaborator{song.is_complete && ' · Ready for distribution'}
       </span>
           <div style={{ display: 'flex', gap: '0.75rem' }}>
             {expanded && (user ? (
