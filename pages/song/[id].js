@@ -118,7 +118,7 @@ export default function SongPlacard() {
         ))}
 
         {/* Distribution Actions — original artist only */}
-        {song.isOriginalArtist && (
+        {song.isOriginalArtist && song.is_complete && (
           <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,107,53,0.25)', paddingTop: '2rem' }}>
             <h2 className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '1rem', marginBottom: '1.5rem', textTransform: 'uppercase', letterSpacing: 1 }}>Distribution</h2>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
