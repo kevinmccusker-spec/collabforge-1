@@ -93,7 +93,7 @@ export default function Dashboard() {
                   {song.is_complete ? ' ✓ Complete' : ' In progress'}
                 </p>
               </div>
-              <Link href={`/#${song.id}`} className="btn btn-sm">View →</Link>
+              <Link href={`/song/${song.id}`} className="btn btn-sm">Placard →</Link>
             </div>
           ))}
         </section>
