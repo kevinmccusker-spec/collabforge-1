@@ -14,7 +14,7 @@ export default function SongPlacard() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (id && user) loadSong()
+    if (id) loadSong()
   }, [id, user])
 
   async function loadSong() {
@@ -32,10 +32,8 @@ export default function SongPlacard() {
       .eq('song_id', id)
       .order('created_at', { ascending: true })
 
-    // Check access — only original artist or collaborators
     const isOriginalArtist = songData.user_id === user.id
     const isCollaborator = versionsData?.some(v => v.user_id === user.id && !v.is_original)
-    if (!isOriginalArtist && !isCollaborator) { router.push('/'); return }
 
     setSong({ ...songData, isOriginalArtist })
     setVersions(versionsData || [])
@@ -52,7 +50,6 @@ export default function SongPlacard() {
     loadSong()
   }
 
-  if (!user) return <div style={{ padding: '4rem', textAlign: 'center', fontFamily: 'Space Mono, monospace', color: 'var(--accent-yellow)' }}>Please sign in to view this placard.</div>
   if (loading) return <div style={{ padding: '4rem', textAlign: 'center', fontFamily: 'Space Mono, monospace', color: 'var(--accent-yellow)' }}>Loading...</div>
 
   return (
