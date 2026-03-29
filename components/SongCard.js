@@ -72,7 +72,7 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
         {song.versions.filter(v => !v.is_original).length} collaboration{song.versions.filter(v => !v.is_original).length !== 1 ? 's' : ''} · by @{song.originalAuthor} · {formatDate(song.created_at)} · {song.collab_split || 50}% to collaborator{song.is_complete && ' · Ready for distribution'}
       </span>
           <div style={{ display: 'flex', gap: '0.75rem' }}>
-            {expanded && (user ? (
+            {expanded && !song.is_complete && (user ? (
               <button className="btn btn-sm" onClick={e => { e.stopPropagation(); setShowRemix(!showRemix) }}>
                 {showRemix ? 'Cancel' : '+ Add Your Version'}
               </button>
