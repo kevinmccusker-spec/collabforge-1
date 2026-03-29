@@ -169,3 +169,25 @@ export default function SongPlacard() {
     </div>
   </div>
 )}
+</div>
+    </div>
+  </div>
+)}
+
+        {/* Distribution Actions — original artist only */}
+        {song.isOriginalArtist && song.is_complete && (
+          <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,107,53,0.25)', paddingTop: '2rem' }}>
+            <h2 className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '1rem', marginBottom: '1.5rem', textTransform: 'uppercase', letterSpacing: 1 }}>Distribution</h2>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <a href="https://landr.com" target="_blank" rel="noopener noreferrer" className="btn btn-sm">Master via LANDR</a>
+              <a href="https://distrokid.com" target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-primary">Distribute via DistroKid</a>
+              <a href="https://tunecore.com" target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-primary">Distribute via TuneCore</a>
+              <a href="https://cdbaby.com" target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-primary">Distribute via CD Baby</a>
+            </div>
+          </div>
+        )}
+
+      </main>
+    </div>
+  )
+}
