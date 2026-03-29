@@ -13,6 +13,7 @@ export default function SongPlacard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [isCollaborator, setIsCollaborator] = useState(false)
+  const [showCertificate, setShowCertificate] = useState(false)
 
   useEffect(() => {
     if (id) loadSong()
@@ -127,27 +128,44 @@ export default function SongPlacard() {
   </div>
 )}
         {/* Distribution Actions — original artist only */}
-        {song.isOriginalArtist && song.is_complete && (
-          <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,107,53,0.25)', paddingTop: '2rem' }}>
-            <h2 className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '1rem', marginBottom: '1.5rem', textTransform: 'uppercase', letterSpacing: 1 }}>Distribution</h2>
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-              <a href="https://landr.com" target="_blank" rel="noopener noreferrer" className="btn btn-sm">
-                Master via LANDR
-              </a>
-              <a href="https://distrokid.com" target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-primary">
-                Distribute via DistroKid
-              </a>
-              <a href="https://tunecore.com" target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-primary">
-                Distribute via TuneCore
-              </a>
-              <a href="https://cdbaby.com" target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-primary">
-                Distribute via CD Baby
-              </a>
-            </div>
-          </div>
-        )}
+        {(song.isOriginalArtist || isCollaborator) && (
+  <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,107,53,0.25)', paddingTop: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+    <button className="btn btn-sm" onClick={() => setShowCertificate(true)}>+ Cert</button>
+    <span className="mono" style={{ fontSize: '0.75rem', opacity: 0.5 }}>Timestamped certificate of creative contributions</span>
+  </div>
+)}
 
-      </main>
+{showCertificate && (
+  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+    <div style={{ background: '#1a1a1a', border: '1px solid var(--burnt-orange)', maxWidth: 600, width: '100%', padding: '2.5rem', position: 'relative' }}>
+      <button onClick={() => setShowCertificate(false)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--cream)', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
+      
+      <p className="mono" style={{ fontSize: '0.7rem', opacity: 0.5, letterSpacing: 2, marginBottom: '1rem' }}>COLLABFORGE.IO · COLLABORATION CERTIFICATE</p>
+      <h2 className="mono" style={{ color: 'var(--burnt-orange)', fontSize: '1.5rem', marginBottom: '0.5rem' }}>{song.title}</h2>
+      <p className="mono" style={{ fontSize: '0.8rem', opacity: 0.6, marginBottom: '2rem' }}>
+        Original by @{song.profiles?.username} · {new Date(song.created_at).toLocaleDateString()} · {song.collab_split || 50}% split offered
+      </p>
+
+      {versions.map(version => (
+        <div key={version.id} style={{ borderLeft: `2px solid ${version.is_original ? 'var(--accent-yellow)' : 'var(--burnt-orange)'}`, paddingLeft: '1rem', marginBottom: '1rem' }}>
+          <p className="mono" style={{ fontSize: '0.85rem', marginBottom: '0.25rem' }}>
+            {version.is_original ? '★ ORIGINAL' : `[${version.version_type?.toUpperCase()}]`} @{version.profiles?.username}
+          </p>
+          <p className="mono" style={{ fontSize: '0.7rem', opacity: 0.5 }}>{new Date(version.created_at).toLocaleString()}</p>
+          {version.notes && <p style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: '0.25rem' }}>{version.notes}</p>}
+          {!version.is_original && (
+            <p className="mono" style={{ fontSize: '0.7rem', marginTop: '0.25rem', color: version.approved ? 'var(--accent-yellow)' : 'rgba(255,255,255,0.3)' }}>
+              {version.approved === true ? '✓ APPROVED' : version.approved === false ? '✗ NOT SELECTED' : '— PENDING'}
+            </p>
+          )}
+        </div>
+      ))}
+
+      <p className="mono" style={{ fontSize: '0.65rem', opacity: 0.4, marginTop: '2rem', lineHeight: 1.6 }}>
+        This certificate serves as a timestamped record of creative contributions made on CollabForge.io. Unauthorized distribution of this collaboration is a violation of CollabForge terms and may constitute copyright infringement.
+      </p>
+
+      <button className="btn btn-sm" onClick={() => window.print()} style={{ marginTop: '1.5rem' }}>Print / Save PDF</button>
     </div>
-  )
-}
+  </div>
+)}
