@@ -169,10 +169,6 @@ export default function SongPlacard() {
     </div>
   </div>
 )}
-</div>
-    </div>
-  </div>
-)}
 
         {/* Distribution Actions — original artist only */}
         {song.isOriginalArtist && song.is_complete && (
