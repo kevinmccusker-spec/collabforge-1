@@ -112,6 +112,9 @@ export default function Dashboard() {
                 <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.6 }}>
                   {v.version_likes?.[0]?.count || 0} likes · original by @{v.songs?.profiles?.username}
                 </p>
+                  <p className="mono" style={{ fontSize: '0.75rem', marginTop: '0.25rem', color: v.approved ? 'var(--accent-yellow)' : v.approved === false ? 'var(--muted-red)' : 'rgba(255,255,255,0.3)' }}>
+                  {v.approved === true ? '✓ APPROVED FOR DISTRIBUTION' : v.approved === false ? '✗ NOT SELECTED' : '— PENDING REVIEW'}
+                </p>
               </div>
               <span className="mono" style={{ fontSize: '0.75rem', opacity: 0.5 }}>{v.notes || '—'}</span>
             </div>
