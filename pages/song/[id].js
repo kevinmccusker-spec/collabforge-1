@@ -58,7 +58,8 @@ export default function SongPlacard() {
       <main style={{ maxWidth: 800, margin: '0 auto', padding: '2rem' }}>
 
         {/* Song Header */}
-        <div style={{ borderLeft: '4px solid var(--burnt-orange)', paddingLeft: '1.5rem', marginBottom: '2rem' }}>
+      <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.5, marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: 2 }}>Studio</p> 
+      <div style={{ borderLeft: '4px solid var(--burnt-orange)', paddingLeft: '1.5rem', marginBottom: '2rem' }}>
           <h1 className="mono" style={{ color: 'var(--burnt-orange)', fontSize: '1.8rem', marginBottom: '0.5rem' }}>{song.title}</h1>
           <p className="mono" style={{ opacity: 0.6, fontSize: '0.85rem' }}>
             Original by @{song.profiles?.username} · {new Date(song.created_at).toLocaleDateString()} · {song.collab_split || 50}% split offered
@@ -67,7 +68,7 @@ export default function SongPlacard() {
         </div>
 
         {/* Versions */}
-        <h2 className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '1rem', marginBottom: '1.5rem', textTransform: 'uppercase', letterSpacing: 1 }}>Version Record</h2>
+        <h2 className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '1rem', marginBottom: '1.5rem', textTransform: 'uppercase', letterSpacing: 1 }}>Collaboration Record</h2>
 
         {versions.map(version => (
           <div key={version.id} style={{
