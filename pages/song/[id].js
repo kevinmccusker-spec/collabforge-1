@@ -116,17 +116,7 @@ export default function SongPlacard() {
             </audio>
           </div>
         ))}
-        {(song.isOriginalArtist || isCollaborator) && (
-  <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,107,53,0.25)', paddingTop: '2rem' }}>
-    <h2 className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '1rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: 1 }}>Placard</h2>
-    <button className="btn btn-sm" onClick={() => window.print()}>
-      Download Placard
-    </button>
-    <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.5, marginTop: '0.5rem' }}>
-      Timestamped record of creative contributions made on CollabForge.io
-    </p>
-  </div>
-)}
+
         {/* Distribution Actions — original artist only */}
         {(song.isOriginalArtist || isCollaborator) && (
   <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,107,53,0.25)', paddingTop: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
