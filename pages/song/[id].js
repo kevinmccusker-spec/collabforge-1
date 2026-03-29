@@ -51,6 +51,10 @@ export default function SongPlacard() {
     await supabase.from('versions').update({ approved: false }).eq('id', versionId)
     loadSong()
   }
+  async function markComplete() {
+  await supabase.from('songs').update({ is_complete: true }).eq('id', id)
+  loadSong()
+}
 
   if (loading) return <div style={{ padding: '4rem', textAlign: 'center', fontFamily: 'Space Mono, monospace', color: 'var(--accent-yellow)' }}>Loading...</div>
 
@@ -121,6 +125,9 @@ export default function SongPlacard() {
         {(song.isOriginalArtist || isCollaborator) && (
   <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,107,53,0.25)', paddingTop: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
     <button className="btn btn-sm" onClick={() => setShowCertificate(true)}>+ Cert</button>
+          {song.isOriginalArtist && !song.is_complete && (
+  <button className="btn btn-sm" onClick={markComplete} style={{ color: 'var(--accent-yellow)', borderColor: 'var(--accent-yellow)' }}>✓ Mark Complete</button>
+)}
     <span className="mono" style={{ fontSize: '0.75rem', opacity: 0.5 }}>Timestamped certificate of creative contributions</span>
   </div>
 )}
