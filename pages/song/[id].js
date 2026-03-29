@@ -12,6 +12,7 @@ export default function SongPlacard() {
   const [versions, setVersions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [isCollaborator, setIsCollaborator] = useState(false)
 
   useEffect(() => {
     if (id) loadSong()
@@ -32,11 +33,11 @@ export default function SongPlacard() {
       .eq('song_id', id)
       .order('created_at', { ascending: true })
 
-    const isOriginalArtist = songData.user_id === user.id
-    const isCollaborator = versionsData?.some(v => v.user_id === user.id && !v.is_original)
+    const isOriginalArtist = user ? songData.user_id === user.id : false
 
     setSong({ ...songData, isOriginalArtist })
     setVersions(versionsData || [])
+    setIsCollaborator(versionsData?.some(v => v.user_id === user?.id && !v.is_original) || false)
     setLoading(false)
   }
 
@@ -114,7 +115,17 @@ export default function SongPlacard() {
             </audio>
           </div>
         ))}
-
+        {(song.isOriginalArtist || isCollaborator) && (
+  <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,107,53,0.25)', paddingTop: '2rem' }}>
+    <h2 className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '1rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: 1 }}>Placard</h2>
+    <button className="btn btn-sm" onClick={() => window.print()}>
+      Download Placard
+    </button>
+    <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.5, marginTop: '0.5rem' }}>
+      Timestamped record of creative contributions made on CollabForge.io
+    </p>
+  </div>
+)}
         {/* Distribution Actions — original artist only */}
         {song.isOriginalArtist && song.is_complete && (
           <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,107,53,0.25)', paddingTop: '2rem' }}>
