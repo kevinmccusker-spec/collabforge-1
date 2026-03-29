@@ -73,7 +73,7 @@ export default function SongPlacard() {
         <h2 className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '1rem', marginBottom: '1.5rem', textTransform: 'uppercase', letterSpacing: 1 }}>Collaboration Record</h2>
 
         {versions.map(version => (
-          {song.isOriginalArtist && !version.is_original && version.approved === null && (
+          <div key={version.id} style={{
             background: 'var(--warm-grey)',
             borderLeft: `4px solid ${version.is_original ? 'var(--accent-yellow)' : version.approved ? 'var(--burnt-orange)' : 'rgba(255,107,53,0.3)'}`,
             padding: '1.25rem',
@@ -97,7 +97,7 @@ export default function SongPlacard() {
                 )}
               </div>
 
-              {song.isOriginalArtist && !version.is_original && (
+              {song.isOriginalArtist && !version.is_original && version.approved === null && (
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <button className="btn btn-sm" onClick={() => approveVersion(version.id)}
                     style={{ color: 'var(--accent-yellow)', borderColor: 'var(--accent-yellow)' }}>
