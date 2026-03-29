@@ -222,8 +222,8 @@ function RemixForm({ songId, onSuccess, onCancel }) {
     <div style={{ background: 'rgba(10,10,10,0.8)', padding: '1.5rem', border: '1px solid var(--burnt-orange)', marginTop: '1rem' }}>
       <h4 className="mono" style={{ color: 'var(--burnt-orange)', marginBottom: '1rem' }}>Add Your Version</h4>
         <p style={{ fontSize: '0.8rem', opacity: 0.7, lineHeight: 1.5, marginBottom: '0.5rem' }}>
-            Your work belongs to you regardless of whether it's selected for distribution. Unselected versions remain on your profile as part of your creative record.
-          </p>
+      Your work belongs to you regardless of whether it's selected for distribution. If selected, you'll receive a share of the collaborator pool (50% of total royalties), divided equally among all contributors whose work appears in the approved version.
+      </p>
       <form onSubmit={submit} style={{ display: 'grid', gap: '0.75rem' }}>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
