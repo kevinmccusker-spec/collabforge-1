@@ -101,10 +101,11 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
             </div>
             {showRemix && (
               <RemixForm
-                songId={song.id}
-                onSuccess={() => { setShowRemix(false); onUpdate() }}
-                onCancel={() => setShowRemix(false)}
-              />
+            songId={song.id}
+            isComplete={song.is_complete}
+            onSuccess={() => { setShowRemix(false); onUpdate() }}
+            onCancel={() => setShowRemix(false)}
+            />
             )}
           </>
         )}
@@ -172,7 +173,7 @@ function VersionItem({ version, onLike, canLike }) {
   )
 }
 
-function RemixForm({ songId, onSuccess, onCancel }) {
+function RemixForm({ songId, isComplete, onSuccess, onCancel }) {
   const { user } = useAuth()
   const [file, setFile] = useState(null)
   const [notes, setNotes] = useState('')
@@ -226,10 +227,12 @@ function RemixForm({ songId, onSuccess, onCancel }) {
       </p>
       <form onSubmit={submit} style={{ display: 'grid', gap: '0.75rem' }}>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-            <input type="radio" value="cowrite" checked={versionType === 'cowrite'} onChange={() => setVersionType('cowrite')} />
-            <span className="mono" style={{ fontSize: '0.8rem' }}>Co-write</span>
-          </label>
+          {!isComplete && (
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+          <input type="radio" value="cowrite" checked={versionType === 'cowrite'} onChange={() => setVersionType('cowrite')} />
+          <span className="mono" style={{ fontSize: '0.8rem' }}>Co-write</span>
+        </label>
+        )}
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
             <input type="radio" value="cover" checked={versionType === 'cover'} onChange={() => setVersionType('cover')} />
             <span className="mono" style={{ fontSize: '0.8rem' }}>Cover</span>
