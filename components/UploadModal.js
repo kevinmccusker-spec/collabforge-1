@@ -73,7 +73,7 @@ export default function UploadModal({ onClose, onSuccess }) {
 
   if (step === 'confirm') return (
     <div className="modal-overlay">
-      <div className="modal-box" style={{ maxWidth: 580 }}>
+      <div className="modal-box" style={{ maxWidth: 580, maxHeight: '90vh', overflowY: 'auto' }}>
         <h2 className="mono" style={{ color: 'var(--burnt-orange)', marginBottom: '1.5rem', fontSize: '1.4rem' }}>
           Before You Let Go
         </h2>
