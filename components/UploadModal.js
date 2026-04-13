@@ -10,6 +10,7 @@ export default function UploadModal({ onClose, onSuccess }) {
   const [tags, setTags] = useState('')
   const [file, setFile] = useState(null)
   const [split, setSplit] = useState('50')
+  const [needsLyrics, setNeedsLyrics] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -47,7 +48,7 @@ export default function UploadModal({ onClose, onSuccess }) {
       // Create song
       const { data: song, error: songErr } = await supabase
         .from('songs')
-        .insert({ title, description, user_id: user.id, is_complete: false, collab_split: parseInt(split) })
+        .insert({ title, description, user_id: user.id, is_complete: false, collab_split: parseInt(split), needs_lyrics: needsLyrics })
         .select().single()
       if (songErr) throw songErr
 
@@ -160,6 +161,12 @@ export default function UploadModal({ onClose, onSuccess }) {
               <option value="10">10% to collaborator (90/10)</option>
             </select>
           </div>
+            <div>
+  <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
+    <input type="checkbox" checked={needsLyrics} onChange={e => setNeedsLyrics(e.target.checked)} style={{ width: 16, height: 16 }} />
+    <span className="mono" style={{ fontSize: '0.8rem', opacity: 0.8 }}>I need lyrics / lyric help</span>
+  </label>
+</div>
           <div style={{ border: '2px dashed var(--accent-yellow)', padding: '2rem', textAlign: 'center', position: 'relative', background: 'rgba(255,200,87,0.04)', cursor: 'pointer' }}>
             <input type="file" accept="audio/*" onChange={handleFileChange} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
             <div className="mono" style={{ color: 'var(--accent-yellow)', pointerEvents: 'none' }}>
