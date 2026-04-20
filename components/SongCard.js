@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../pages/_app'
 
 export default function SongCard({ song, onUpdate, onAuthRequired }) {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const [showAll, setShowAll] = useState(false)
   const [showRemix, setShowRemix] = useState(false)
   const [liking, setLiking] = useState(false)
@@ -36,7 +36,7 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
     await supabase.from('comments').insert({
       song_id: song.id,
       user_id: user.id,
-      username: user.user_metadata?.username || user.email,
+      username: profile?.username || user.email?.split('@')[0],
       body: commentBody.trim()
     })
     setCommentBody('')
