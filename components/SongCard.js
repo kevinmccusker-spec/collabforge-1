@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../pages/_app'
 
@@ -8,16 +8,47 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
   const [showRemix, setShowRemix] = useState(false)
   const [liking, setLiking] = useState(false)
   const [expanded, setExpanded] = useState(false)
+  const [comments, setComments] = useState([])
+  const [commentBody, setCommentBody] = useState('')
+  const [submittingComment, setSubmittingComment] = useState(false)
 
   const topVersions = song.versions.slice(0, 11)
   const hiddenVersions = song.versions.slice(11)
+
+  useEffect(() => {
+    if (expanded) loadComments()
+  }, [expanded])
+
+  async function loadComments() {
+    const { data } = await supabase
+      .from('comments')
+      .select('*')
+      .eq('song_id', song.id)
+      .order('created_at', { ascending: true })
+    setComments(data || [])
+  }
+
+  async function submitComment(e) {
+    e.preventDefault()
+    if (!user) { onAuthRequired(); return }
+    if (!commentBody.trim()) return
+    setSubmittingComment(true)
+    await supabase.from('comments').insert({
+      song_id: song.id,
+      user_id: user.id,
+      username: user.user_metadata?.username || user.email,
+      body: commentBody.trim()
+    })
+    setCommentBody('')
+    loadComments()
+    setSubmittingComment(false)
+  }
 
   async function toggleLike(versionId, currentLikes) {
     if (!user) { onAuthRequired(); return }
     if (liking) return
     setLiking(true)
 
-    // Check if liked
     const { data: existing } = await supabase
       .from('version_likes')
       .select('id')
@@ -29,7 +60,6 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
       await supabase.from('version_likes').delete().eq('id', existing.id)
     } else {
       await supabase.from('version_likes').insert({ version_id: versionId, user_id: user.id })
-
     }
 
     setLiking(false)
@@ -49,28 +79,27 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
         <h2 className="mono" style={{ fontSize: '1.1rem', color: 'var(--burnt-orange)', letterSpacing: '-1px', marginBottom: '0.4rem' }}>
           {song.title}
         </h2>
-        
         {song.description && expanded && (
-      <p style={{ marginTop: '0.5rem', lineHeight: 1.6, fontSize: '0.95rem' }}>{song.description}</p>
-      )}
+          <p style={{ marginTop: '0.5rem', lineHeight: 1.6, fontSize: '0.95rem' }}>{song.description}</p>
+        )}
       </div>
 
       {/* Versions */}
       <div style={{ borderTop: '1px solid rgba(255,107,53,0.25)', paddingTop: '1rem' }}>
-        
-      {/* Always show original */}
-      {song.versions.filter(v => v.is_original).map(version => (
-      <div key={version.id} style={{ background: 'rgba(10,10,10,0.6)', padding: '0.75rem', borderLeft: '2px solid var(--accent-yellow)' }}>
-      <audio controls style={{ width: '100%' }}>
-      <source src={version.audio_url} />
-      </audio>
-      </div>
+
+        {/* Always show original */}
+        {song.versions.filter(v => v.is_original).map(version => (
+          <div key={version.id} style={{ background: 'rgba(10,10,10,0.6)', padding: '0.75rem', borderLeft: '2px solid var(--accent-yellow)' }}>
+            <audio controls style={{ width: '100%' }}>
+              <source src={version.audio_url} />
+            </audio>
+          </div>
         ))}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem' }}>
           <span className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '0.85rem' }}>
-        {song.versions.filter(v => !v.is_original).length} collaboration{song.versions.filter(v => !v.is_original).length !== 1 ? 's' : ''} · by @{song.originalAuthor} · {formatDate(song.created_at)} · {song.collab_split || 50}% to collaborator{song.is_complete && ' · Ready for distribution'}
-      </span>
+            {song.versions.filter(v => !v.is_original).length} collaboration{song.versions.filter(v => !v.is_original).length !== 1 ? 's' : ''} · by @{song.originalAuthor} · {formatDate(song.created_at)} · {song.collab_split || 50}% to collaborator{song.is_complete && ' · Ready for distribution'}
+          </span>
           <div style={{ display: 'flex', gap: '0.75rem' }}>
             {expanded && !song.is_complete && (user ? (
               <button className="btn btn-sm" onClick={e => { e.stopPropagation(); setShowRemix(!showRemix) }}>
@@ -101,12 +130,39 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
             </div>
             {showRemix && (
               <RemixForm
-            songId={song.id}
-            isComplete={song.is_complete}
-            onSuccess={() => { setShowRemix(false); onUpdate() }}
-            onCancel={() => setShowRemix(false)}
-            />
+                songId={song.id}
+                isComplete={song.is_complete}
+                onSuccess={() => { setShowRemix(false); onUpdate() }}
+                onCancel={() => setShowRemix(false)}
+              />
             )}
+
+            {/* Comments */}
+            <div style={{ marginTop: '1.5rem', borderTop: '1px solid rgba(255,107,53,0.2)', paddingTop: '1rem' }}>
+              <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.5, marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: 1 }}>
+                {song.needs_lyrics ? 'Suggest Lyrics / Leave a Comment' : 'Comments'}
+              </p>
+
+              {comments.map(c => (
+                <div key={c.id} style={{ marginBottom: '0.75rem', borderLeft: '2px solid rgba(255,107,53,0.3)', paddingLeft: '0.75rem' }}>
+                  <p className="mono" style={{ fontSize: '0.75rem', color: 'var(--accent-yellow)', marginBottom: '0.2rem' }}>@{c.username}</p>
+                  <p style={{ fontSize: '0.85rem', opacity: 0.85 }}>{c.body}</p>
+                </div>
+              ))}
+
+              <form onSubmit={submitComment} style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                <textarea
+                  value={commentBody}
+                  onChange={e => setCommentBody(e.target.value)}
+                  placeholder={song.needs_lyrics ? 'Suggest lyrics or finish a line...' : 'Leave a comment...'}
+                  rows={2}
+                  style={{ flex: 1, resize: 'vertical', fontSize: '0.85rem' }}
+                />
+                <button type="submit" className="btn btn-sm" disabled={submittingComment} style={{ alignSelf: 'flex-end' }}>
+                  {submittingComment ? '...' : 'Post'}
+                </button>
+              </form>
+            </div>
           </>
         )}
       </div>
@@ -125,10 +181,10 @@ function VersionItem({ version, onLike, canLike }) {
       ...(version.is_original ? { background: 'rgba(255,200,87,0.07)' } : {})
     }}>
       {version.is_original && (
-  <span className="mono" style={{ position: 'absolute', top: '0.5rem', left: '50%', transform: 'translateX(-50%)', fontSize: '0.65rem', color: 'var(--accent-yellow)', background: 'var(--deep-black)', padding: '0.15rem 0.4rem', letterSpacing: 1 }}>
-    ORIGINAL
-  </span>
-)}
+        <span className="mono" style={{ position: 'absolute', top: '0.5rem', left: '50%', transform: 'translateX(-50%)', fontSize: '0.65rem', color: 'var(--accent-yellow)', background: 'var(--deep-black)', padding: '0.15rem 0.4rem', letterSpacing: 1 }}>
+          ORIGINAL
+        </span>
+      )}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
         <div className="mono" style={{ fontSize: '0.85rem' }}>
@@ -222,17 +278,17 @@ function RemixForm({ songId, isComplete, onSuccess, onCancel }) {
   return (
     <div style={{ background: 'rgba(10,10,10,0.8)', padding: '1.5rem', border: '1px solid var(--burnt-orange)', marginTop: '1rem' }}>
       <h4 className="mono" style={{ color: 'var(--burnt-orange)', marginBottom: '1rem' }}>Add Your Version</h4>
-        <p style={{ fontSize: '0.8rem', opacity: 0.7, lineHeight: 1.5, marginBottom: '0.5rem' }}>
-      Your work belongs to you regardless of whether it's selected for distribution. If selected, you'll receive a share of the collaborator pool (50% of total royalties), divided equally among all contributors whose work appears in the approved version.
+      <p style={{ fontSize: '0.8rem', opacity: 0.7, lineHeight: 1.5, marginBottom: '0.5rem' }}>
+        Your work belongs to you regardless of whether it's selected for distribution. If selected, you'll receive a share of the collaborator pool (50% of total royalties), divided equally among all contributors whose work appears in the approved version.
       </p>
       <form onSubmit={submit} style={{ display: 'grid', gap: '0.75rem' }}>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
           {!isComplete && (
-        <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-          <input type="radio" value="cowrite" checked={versionType === 'cowrite'} onChange={() => setVersionType('cowrite')} />
-          <span className="mono" style={{ fontSize: '0.8rem' }}>Co-write</span>
-        </label>
-        )}
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+              <input type="radio" value="cowrite" checked={versionType === 'cowrite'} onChange={() => setVersionType('cowrite')} />
+              <span className="mono" style={{ fontSize: '0.8rem' }}>Co-write</span>
+            </label>
+          )}
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
             <input type="radio" value="cover" checked={versionType === 'cover'} onChange={() => setVersionType('cover')} />
             <span className="mono" style={{ fontSize: '0.8rem' }}>Cover</span>
@@ -250,11 +306,11 @@ function RemixForm({ songId, isComplete, onSuccess, onCancel }) {
 
         {error && <p className="error">⚠ {error}</p>}
 
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
           <input type="checkbox" required style={{ marginTop: 4, width: 16, height: 16 }} />
           <span style={{ fontSize: '0.8rem', opacity: 0.8, lineHeight: 1.5 }}>I agree to the 50/50 split on co-writes and standard mechanical rates on covers. Unauthorized independent distribution of this collaboration is a violation of CollabForge terms and may constitute copyright infringement.</span>
         </div>
-          
+
         <div style={{ display: 'flex', gap: '0.75rem' }}>
           <button type="submit" className="btn btn-primary btn-sm" disabled={loading}>
             {loading ? 'Uploading...' : 'Submit Version'}
