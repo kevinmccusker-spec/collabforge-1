@@ -28,6 +28,11 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
     setComments(data || [])
   }
 
+  async function deleteComment(commentId) {
+  await supabase.from('comments').delete().eq('id', commentId)
+  loadComments()
+}
+
   async function submitComment(e) {
     e.preventDefault()
     if (!user) { onAuthRequired(); return }
@@ -142,10 +147,15 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
               </p>
 
               {comments.map(c => (
-                <div key={c.id} style={{ marginBottom: '0.75rem', borderLeft: '2px solid rgba(255,107,53,0.3)', paddingLeft: '0.75rem' }}>
-                  <p className="mono" style={{ fontSize: '0.75rem', color: 'var(--accent-yellow)', marginBottom: '0.2rem' }}>@{c.username}</p>
-                  <p style={{ fontSize: '0.85rem', opacity: 0.85 }}>{c.body}</p>
-                </div>
+            <div key={c.id} style={{ marginBottom: '0.75rem', borderLeft: '2px solid rgba(255,107,53,0.3)', paddingLeft: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <p className="mono" style={{ fontSize: '0.75rem', color: 'var(--accent-yellow)', marginBottom: '0.2rem' }}>@{c.username}</p>
+              <p style={{ fontSize: '0.85rem', opacity: 0.85 }}>{c.body}</p>
+            </div>
+              {user && c.user_id === user.id && (
+                <button onClick={() => deleteComment(c.id)} style={{ background: 'none', border: 'none', color: 'var(--muted-red)', cursor: 'pointer', fontSize: '0.75rem', fontFamily: 'Space Mono, monospace', opacity: 0.6 }}>✕</button>
+    )}
+            </div>
               ))}
 
               <form onSubmit={submitComment} style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
