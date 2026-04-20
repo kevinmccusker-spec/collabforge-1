@@ -108,11 +108,9 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
             ) : (
               <button className="btn btn-sm" onClick={e => { e.stopPropagation(); onAuthRequired() }}>+ Add Your Version</button>
             ))}
-            {song.versions.filter(v => !v.is_original).length > 0 && (
               <button className="btn btn-sm" onClick={() => setExpanded(!expanded)}>
-                {expanded ? 'Collapse ↑' : 'View ↓'}
+            {expanded ? 'Collapse ↑' : 'View ↓'}
               </button>
-            )}
           </div>
         </div>
 
