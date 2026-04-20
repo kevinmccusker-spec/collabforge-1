@@ -153,7 +153,7 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
               <p style={{ fontSize: '0.85rem', opacity: 0.85 }}>{c.body}</p>
             </div>
               {user && c.user_id === user.id && (
-                <button onClick={() => { if (window.confirm('Delete this comment?')) deleteComment(c.id) }} style={{ background: 'none', border: 'none', color: 'var(--muted-red)', cursor: 'pointer', fontSize: '0.75rem', fontFamily:
+                <button onClick={() => { if (window.confirm('Delete this comment?')) deleteComment(c.id) }} style={{ background: 'none', border: 'none', color: 'var(--muted-red)', cursor: 'pointer', fontSize: '0.75rem', fontFamily: 'Space Mono, monospace', opacity: 0.6 }}>✕</button>
             )}
             </div>
               ))}
