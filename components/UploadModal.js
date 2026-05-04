@@ -142,7 +142,7 @@ export default function UploadModal({ onClose, onSuccess }) {
         <button onClick={onClose} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--cream)', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
 
         <h2 className="mono" style={{ color: 'var(--accent-yellow)', marginBottom: '0.5rem', fontSize: '1.4rem' }}>
-          Release Your Unfinished Work
+          Release Your Song
         </h2>
         <p style={{ opacity: 0.7, marginBottom: '1.5rem' }}>Pass it to the hive mind. See what becomes of it.</p>
 
