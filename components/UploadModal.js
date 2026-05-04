@@ -138,7 +138,7 @@ export default function UploadModal({ onClose, onSuccess }) {
 
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal-box" style={{ maxWidth: 560 }}>
+      <div className="modal-box" style={{ maxWidth: 560, maxHeight: '90vh', overflowY: 'auto' }}>
         <button onClick={onClose} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--cream)', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
 
         <h2 className="mono" style={{ color: 'var(--accent-yellow)', marginBottom: '0.5rem', fontSize: '1.4rem' }}>
