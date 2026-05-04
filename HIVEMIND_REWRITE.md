@@ -63,7 +63,72 @@ through engagement.
 - No platform refereeing of disputes
 
 ## Data Model Changes
-(to be filled in next, together)
+## Data Model Changes
+
+### `songs` table
+
+**Remove:**
+- `split_offer` (no more 10-50% selection at upload)
+- `is_complete` (no more "Mark Complete" — no approval gates)
+
+**Add:**
+- `ai_disclosure` enum: `'human_made'`, `'ai_assisted'`, `'pure_ai'` — required at upload
+- `content_type` enum: `'audio'`, `'lyrics'` — supports lyrics-as-seed uploads
+- `lyrics_text` text (nullable) — populated when `content_type = 'lyrics'`
+- `needs_music` boolean (default false) — true when lyrics are looking for a melody
+
+### `versions` table
+
+**Remove:**
+- `approved` (no approvals)
+- `approved_at` (no approvals)
+- Any other approval-related columns or state
+
+**Add:**
+- `parent_version_id` (foreign key to `versions.id`, nullable) — null when built directly from the original song; populated when built from another version
+- `parent_song_id` (foreign key to `songs.id`, required) — always points to the root song A
+- `ai_disclosure` enum: `'human_made'`, `'ai_assisted'`, `'pure_ai'` — required at upload
+- `contribution_notes` text — short description of what this contributor did 
+  (e.g., "added vocals," "rewrote bridge," "electronic remix")
+
+### `comments` table
+
+No structural changes. Comments remain keyed to `song_id`. One unified thread 
+per song covers conversation about the original and all derivative versions.
+
+### `version_likes` table
+
+No structural changes. Likes per version drive the engagement filter — 
+most-liked versions surface to the top of a song's chain.
+
+### `lyric_suggestions` table
+
+Already exists from prior session. May be deprecated once lyrics-as-uploads 
+are first-class via `songs.content_type = 'lyrics'`. Decide during migration 
+whether to keep, merge, or drop.
+
+### Migration Notes
+
+- Pre-launch with no real user data: schema changes can be applied directly 
+  without complex data migration
+- All approval-related columns can be dropped cleanly
+- `lyrics_suggestions` table may be retired or merged into `comments` / `songs`
+- RLS policies for approve/reject can be removed entirely
+- New RLS policies needed for: 
+  - Anyone can insert a version with any `parent_version_id` or `parent_song_id` 
+    (no approval needed)
+  - Original artist can edit their own song's metadata only, not derivative versions
+  - Comments remain world-readable, authenticated-write
+
+### Chain Walking
+
+The chain is computed on read, not stored. To assemble the placard for any 
+version, walk backward via `parent_version_id` until reaching null, then 
+the chain root is the original song (referenced via `parent_song_id`).
+
+A version's full chain = [original song A] + [all ancestor versions] + [this version]
+
+Equal split is calculated from chain length: `1 / chain.length` per member.
 
 ## UI Changes
 (to be filled in next)
