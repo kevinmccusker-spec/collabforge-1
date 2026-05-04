@@ -5,10 +5,13 @@ import { useAuth } from '../pages/_app'
 export default function UploadModal({ onClose, onSuccess }) {
   const { user, profile } = useAuth()
   const [step, setStep] = useState('form') // 'form' | 'confirm'
+  const [contentType, setContentType] = useState('audio') // 'audio' | 'lyrics'
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [tags, setTags] = useState('')
   const [file, setFile] = useState(null)
+  const [lyricsText, setLyricsText] = useState('')
+  const [needsMusic, setNeedsMusic] = useState(true)
   const [aiDisclosure, setAiDisclosure] = useState('human_made')
   const [confirmed, setConfirmed] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -26,7 +29,8 @@ export default function UploadModal({ onClose, onSuccess }) {
 
   function handleFormSubmit(e) {
     e.preventDefault()
-    if (!file) { setError('Please select an audio file'); return }
+    if (contentType === 'audio' && !file) { setError('Please select an audio file'); return }
+    if (contentType === 'lyrics' && !lyricsText.trim()) { setError('Please write some lyrics or poetry'); return }
     setStep('confirm')
   }
 
@@ -36,13 +40,18 @@ export default function UploadModal({ onClose, onSuccess }) {
     setError('')
 
     try {
-      // Upload file
-      const ext = file.name.split('.').pop()
-      const path = `songs/${Date.now()}-${Math.random().toString(36).slice(7)}.${ext}`
-      const { error: uploadErr } = await supabase.storage.from('audio').upload(path, file)
-      if (uploadErr) throw uploadErr
+      let audioUrl = ''
 
-      const { data: { publicUrl } } = supabase.storage.from('audio').getPublicUrl(path)
+      // Only upload file for audio content
+      if (contentType === 'audio') {
+        const ext = file.name.split('.').pop()
+        const path = `songs/${Date.now()}-${Math.random().toString(36).slice(7)}.${ext}`
+        const { error: uploadErr } = await supabase.storage.from('audio').upload(path, file)
+        if (uploadErr) throw uploadErr
+
+        const { data: { publicUrl } } = supabase.storage.from('audio').getPublicUrl(path)
+        audioUrl = publicUrl
+      }
 
       // Create song
       const { data: song, error: songErr } = await supabase
@@ -52,7 +61,9 @@ export default function UploadModal({ onClose, onSuccess }) {
           description,
           user_id: user.id,
           ai_disclosure: aiDisclosure,
-          content_type: 'audio'
+          content_type: contentType,
+          lyrics_text: contentType === 'lyrics' ? lyricsText.trim() : null,
+          needs_music: contentType === 'lyrics' ? needsMusic : false
         })
         .select().single()
       if (songErr) throw songErr
@@ -62,12 +73,12 @@ export default function UploadModal({ onClose, onSuccess }) {
         song_id: song.id,
         parent_song_id: song.id,
         user_id: user.id,
-        audio_url: publicUrl,
+        audio_url: audioUrl,
         is_original: true,
         version_type: 'original',
         ai_disclosure: aiDisclosure,
         notes: tags || '',
-        contribution_notes: 'original upload'
+        contribution_notes: contentType === 'lyrics' ? 'original lyrics' : 'original upload'
       })
       if (versionErr) throw versionErr
 
@@ -142,13 +153,45 @@ export default function UploadModal({ onClose, onSuccess }) {
         <button onClick={onClose} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--cream)', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
 
         <h2 className="mono" style={{ color: 'var(--accent-yellow)', marginBottom: '0.5rem', fontSize: '1.4rem' }}>
-          Release Your Song
+          Give Your Song a Place to Grow
         </h2>
-        <p style={{ opacity: 0.7, marginBottom: '1.5rem' }}>Pass it to the hive mind. See what becomes of it.</p>
+        <p style={{ opacity: 0.7, marginBottom: '1.5rem' }}>Release it to the hive mind. See what becomes of it.</p>
+
+        {/* Content Type Toggle */}
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
+          <button
+            type="button"
+            className="btn btn-sm"
+            onClick={() => setContentType('audio')}
+            style={{
+              flex: 1,
+              opacity: contentType === 'audio' ? 1 : 0.5,
+              borderColor: contentType === 'audio' ? 'var(--accent-yellow)' : 'rgba(255,255,255,0.2)',
+              color: contentType === 'audio' ? 'var(--accent-yellow)' : 'var(--cream)'
+            }}
+          >
+            🎵 Audio
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm"
+            onClick={() => setContentType('lyrics')}
+            style={{
+              flex: 1,
+              opacity: contentType === 'lyrics' ? 1 : 0.5,
+              borderColor: contentType === 'lyrics' ? 'var(--accent-yellow)' : 'rgba(255,255,255,0.2)',
+              color: contentType === 'lyrics' ? 'var(--accent-yellow)' : 'var(--cream)'
+            }}
+          >
+            📝 Lyrics / Poem
+          </button>
+        </div>
 
         <form onSubmit={handleFormSubmit} style={{ display: 'grid', gap: '1rem' }}>
           <div>
-            <label className="mono" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '0.4rem', opacity: 0.8 }}>Song Title *</label>
+            <label className="mono" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '0.4rem', opacity: 0.8 }}>
+              {contentType === 'audio' ? 'Song Title *' : 'Title *'}
+            </label>
             <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="What's this called?" required />
           </div>
 
@@ -181,14 +224,35 @@ export default function UploadModal({ onClose, onSuccess }) {
             <p className="mono" style={{ fontSize: '0.7rem', opacity: 0.5, marginTop: '0.5rem' }}>Honest disclosure helps the community give the right kind of feedback.</p>
           </div>
 
-          <div style={{ border: '2px dashed var(--accent-yellow)', padding: '2rem', textAlign: 'center', position: 'relative', background: 'rgba(255,200,87,0.04)', cursor: 'pointer' }}>
-            <input type="file" accept="audio/*" onChange={handleFileChange} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
-            <div className="mono" style={{ color: 'var(--accent-yellow)', pointerEvents: 'none' }}>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📼</div>
-              <div>{file ? `✓ ${file.name}` : 'Drop your raw track here'}</div>
-              <div style={{ fontSize: '0.75rem', marginTop: '0.4rem', opacity: 0.6 }}>MP3 or WAV · Max 10MB</div>
+          {/* Audio file upload OR lyrics textarea based on content type */}
+          {contentType === 'audio' ? (
+            <div style={{ border: '2px dashed var(--accent-yellow)', padding: '2rem', textAlign: 'center', position: 'relative', background: 'rgba(255,200,87,0.04)', cursor: 'pointer' }}>
+              <input type="file" accept="audio/*" onChange={handleFileChange} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
+              <div className="mono" style={{ color: 'var(--accent-yellow)', pointerEvents: 'none' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📼</div>
+                <div>{file ? `✓ ${file.name}` : 'Drop your raw track here'}</div>
+                <div style={{ fontSize: '0.75rem', marginTop: '0.4rem', opacity: 0.6 }}>MP3 or WAV · Max 10MB</div>
+              </div>
             </div>
-          </div>
+          ) : (
+            <>
+              <div>
+                <label className="mono" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '0.4rem', opacity: 0.8 }}>Your Lyrics / Poem *</label>
+                <textarea
+                  value={lyricsText}
+                  onChange={e => setLyricsText(e.target.value)}
+                  rows={10}
+                  placeholder="Type or paste your lyrics here..."
+                  style={{ resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.6 }}
+                  required
+                />
+              </div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                <input type="checkbox" checked={needsMusic} onChange={e => setNeedsMusic(e.target.checked)} style={{ width: 16, height: 16 }} />
+                <span className="mono" style={{ fontSize: '0.8rem', opacity: 0.8 }}>Looking for someone to set this to music</span>
+              </label>
+            </>
+          )}
 
           {error && <p className="error">⚠ {error}</p>}
 
