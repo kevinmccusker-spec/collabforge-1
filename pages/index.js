@@ -152,4 +152,10 @@ export default function Home() {
 
       {showUpload && (
         <UploadModal
-          onClose={() => set
+          onClose={() => setShowUpload(false)}
+          onSuccess={() => { setShowUpload(false); loadSongs() }}
+        />
+      )}
+    </div>
+  )
+}
