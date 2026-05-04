@@ -4,16 +4,12 @@ import { useAuth } from '../pages/_app'
 
 export default function SongCard({ song, onUpdate, onAuthRequired }) {
   const { user, profile } = useAuth()
-  const [showAll, setShowAll] = useState(false)
-  const [showRemix, setShowRemix] = useState(false)
+  const [showRemixFor, setShowRemixFor] = useState(null) // null | 'original' | versionId
   const [liking, setLiking] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const [comments, setComments] = useState([])
   const [commentBody, setCommentBody] = useState('')
   const [submittingComment, setSubmittingComment] = useState(false)
-
-  const topVersions = song.versions.slice(0, 11)
-  const hiddenVersions = song.versions.slice(11)
 
   useEffect(() => {
     if (expanded) loadComments()
@@ -29,9 +25,9 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
   }
 
   async function deleteComment(commentId) {
-  await supabase.from('comments').delete().eq('id', commentId)
-  loadComments()
-}
+    await supabase.from('comments').delete().eq('id', commentId)
+    loadComments()
+  }
 
   async function submitComment(e) {
     e.preventDefault()
@@ -49,7 +45,7 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
     setSubmittingComment(false)
   }
 
-  async function toggleLike(versionId, currentLikes) {
+  async function toggleLike(versionId) {
     if (!user) { onAuthRequired(); return }
     if (liking) return
     setLiking(true)
@@ -71,16 +67,46 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
     onUpdate()
   }
 
+  function handleBuildFrom(parentId) {
+    if (!user) { onAuthRequired(); return }
+    setShowRemixFor(parentId)
+  }
+
+  function disclosureLabel(d) {
+    if (d === 'human_made') return 'HUMAN'
+    if (d === 'ai_assisted') return 'AI-ASSISTED'
+    if (d === 'pure_ai') return 'PURE AI'
+    return 'HUMAN'
+  }
+
+  function disclosureColor(d) {
+    if (d === 'human_made') return 'var(--accent-yellow)'
+    if (d === 'ai_assisted') return 'var(--burnt-orange)'
+    if (d === 'pure_ai') return 'var(--muted-red)'
+    return 'var(--accent-yellow)'
+  }
+
+  const collaborations = song.versions.filter(v => !v.is_original).length
+
   return (
-    <div className={`card fade-in ${song.is_complete ? 'complete' : ''}`}>
-      {song.is_complete && (
-        <div className="mono" style={{ position: 'absolute', top: '1rem', right: '1rem', fontSize: '0.7rem', color: 'var(--accent-yellow)', background: 'var(--deep-black)', padding: '0.25rem 0.6rem', border: '1px solid var(--accent-yellow)', letterSpacing: 1 }}>
-          ✓ COMPLETE
-        </div>
-      )}
+    <div className="card fade-in">
+      {/* AI disclosure badge */}
+      <div className="mono" style={{
+        position: 'absolute',
+        top: '1rem',
+        right: '1rem',
+        fontSize: '0.65rem',
+        color: disclosureColor(song.ai_disclosure),
+        background: 'var(--deep-black)',
+        padding: '0.25rem 0.6rem',
+        border: `1px solid ${disclosureColor(song.ai_disclosure)}`,
+        letterSpacing: 1
+      }}>
+        {disclosureLabel(song.ai_disclosure)}
+      </div>
 
       {/* Song Header */}
-      <div style={{ marginBottom: '0.5rem' }}>
+      <div style={{ marginBottom: '0.5rem', paddingRight: '6rem' }}>
         <h2 className="mono" style={{ fontSize: '1.1rem', color: 'var(--burnt-orange)', letterSpacing: '-1px', marginBottom: '0.4rem' }}>
           {song.title}
         </h2>
@@ -101,68 +127,83 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
           </div>
         ))}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
           <span className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '0.85rem' }}>
-            {song.versions.filter(v => !v.is_original).length} collaboration{song.versions.filter(v => !v.is_original).length !== 1 ? 's' : ''} · by @{song.originalAuthor} · {formatDate(song.created_at)} · {song.collab_split || 50}% to collaborator{song.is_complete && ' · Ready for distribution'}
+            {collaborations} version{collaborations !== 1 ? 's' : ''} · by @{song.originalAuthor} · {formatDate(song.created_at)}
           </span>
           <div style={{ display: 'flex', gap: '0.75rem' }}>
-            {expanded && !song.is_complete && (user ? (
-              <button className="btn btn-sm" onClick={e => { e.stopPropagation(); setShowRemix(!showRemix) }}>
-                {showRemix ? 'Cancel' : '+ Add Your Version'}
+            {expanded && (
+              <button
+                className="btn btn-sm"
+                onClick={e => { e.stopPropagation(); handleBuildFrom('original') }}
+              >
+                + Build From Original
               </button>
-            ) : (
-              <button className="btn btn-sm" onClick={e => { e.stopPropagation(); onAuthRequired() }}>+ Add Your Version</button>
-            ))}
-              <button className="btn btn-sm" onClick={() => setExpanded(!expanded)}>
-            {expanded ? 'Collapse ↑' : 'View ↓'}
-              </button>
+            )}
+            <button className="btn btn-sm" onClick={() => setExpanded(!expanded)}>
+              {expanded ? 'Collapse ↑' : 'View ↓'}
+            </button>
           </div>
         </div>
 
         {expanded && (
           <>
-            <div style={{ marginTop: '1.25rem' }}>
-              {song.versions.filter(v => !v.is_original).map(version => (
-                <VersionItem
-                  key={version.id}
-                  version={version}
-                  onLike={() => toggleLike(version.id, version.likeCount)}
-                  canLike={!!user}
-                />
-              ))}
-            </div>
-            {showRemix && (
+            {/* Remix form for original */}
+            {showRemixFor === 'original' && (
               <RemixForm
                 songId={song.id}
-                isComplete={song.is_complete}
-                onSuccess={() => { setShowRemix(false); onUpdate() }}
-                onCancel={() => setShowRemix(false)}
+                parentVersionId={null}
+                onSuccess={() => { setShowRemixFor(null); onUpdate() }}
+                onCancel={() => setShowRemixFor(null)}
               />
             )}
+
+            <div style={{ marginTop: '1.25rem' }}>
+              {song.versions.filter(v => !v.is_original).map(version => (
+                <div key={version.id}>
+                  <VersionItem
+                    version={version}
+                    onLike={() => toggleLike(version.id)}
+                    onBuildFrom={() => handleBuildFrom(version.id)}
+                    canLike={!!user}
+                    disclosureLabel={disclosureLabel}
+                    disclosureColor={disclosureColor}
+                  />
+                  {showRemixFor === version.id && (
+                    <RemixForm
+                      songId={song.id}
+                      parentVersionId={version.id}
+                      onSuccess={() => { setShowRemixFor(null); onUpdate() }}
+                      onCancel={() => setShowRemixFor(null)}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
 
             {/* Comments */}
             <div style={{ marginTop: '1.5rem', borderTop: '1px solid rgba(255,107,53,0.2)', paddingTop: '1rem' }}>
               <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.5, marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: 1 }}>
-                {song.needs_lyrics ? 'Suggest Lyrics / Leave a Comment' : 'Comments'}
+                {song.needs_music ? 'Suggest Lyrics or Leave a Comment' : 'Comments'}
               </p>
 
               {comments.map(c => (
-            <div key={c.id} style={{ marginBottom: '0.75rem', borderLeft: '2px solid rgba(255,107,53,0.3)', paddingLeft: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <p className="mono" style={{ fontSize: '0.75rem', color: 'var(--accent-yellow)', marginBottom: '0.2rem' }}>@{c.username}</p>
-              <p style={{ fontSize: '0.85rem', opacity: 0.85 }}>{c.body}</p>
-            </div>
-              {user && c.user_id === user.id && (
-                <button onClick={() => { if (window.confirm('Delete this comment?')) deleteComment(c.id) }} style={{ background: 'none', border: 'none', color: 'var(--muted-red)', cursor: 'pointer', fontSize: '0.75rem', fontFamily: 'Space Mono, monospace', opacity: 0.6 }}>✕</button>
-            )}
-            </div>
+                <div key={c.id} style={{ marginBottom: '0.75rem', borderLeft: '2px solid rgba(255,107,53,0.3)', paddingLeft: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <p className="mono" style={{ fontSize: '0.75rem', color: 'var(--accent-yellow)', marginBottom: '0.2rem' }}>@{c.username}</p>
+                    <p style={{ fontSize: '0.85rem', opacity: 0.85 }}>{c.body}</p>
+                  </div>
+                  {user && c.user_id === user.id && (
+                    <button onClick={() => { if (window.confirm('Delete this comment?')) deleteComment(c.id) }} style={{ background: 'none', border: 'none', color: 'var(--muted-red)', cursor: 'pointer', fontSize: '0.75rem', fontFamily: 'Space Mono, monospace', opacity: 0.6 }}>✕</button>
+                  )}
+                </div>
               ))}
 
               <form onSubmit={submitComment} style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
                 <textarea
                   value={commentBody}
                   onChange={e => setCommentBody(e.target.value)}
-                  placeholder={song.needs_lyrics ? 'Suggest lyrics or finish a line...' : 'Leave a comment...'}
+                  placeholder={song.needs_music ? 'Suggest lyrics or finish a line...' : 'Leave a comment...'}
                   rows={2}
                   style={{ flex: 1, resize: 'vertical', fontSize: '0.85rem' }}
                 />
@@ -178,7 +219,7 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
   )
 }
 
-function VersionItem({ version, onLike, canLike }) {
+function VersionItem({ version, onLike, onBuildFrom, canLike, disclosureLabel, disclosureColor }) {
   return (
     <div style={{
       background: 'rgba(10,10,10,0.6)',
@@ -194,7 +235,7 @@ function VersionItem({ version, onLike, canLike }) {
         </span>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div className="mono" style={{ fontSize: '0.85rem' }}>
           {!version.is_original && (
             <span style={{ color: 'var(--muted-red)', marginRight: 6 }}>
@@ -202,26 +243,42 @@ function VersionItem({ version, onLike, canLike }) {
             </span>
           )}
           @{version.creator}
-          {version.notes && <span style={{ opacity: 0.6 }}> · {version.notes}</span>}
+          <span style={{ marginLeft: 6, color: disclosureColor(version.ai_disclosure), fontSize: '0.7rem' }}>
+            · {disclosureLabel(version.ai_disclosure)}
+          </span>
+          {version.contribution_notes && (
+            <span style={{ opacity: 0.6, fontStyle: 'italic' }}> · "{version.contribution_notes}"</span>
+          )}
         </div>
 
-        <button
-          onClick={onLike}
-          disabled={!canLike}
-          className="mono"
-          style={{
-            background: 'transparent',
-            border: '1px solid var(--muted-red)',
-            color: 'var(--muted-red)',
-            padding: '0.3rem 0.8rem',
-            cursor: canLike ? 'pointer' : 'default',
-            fontSize: '0.85rem',
-            fontFamily: 'Space Mono, monospace',
-            transition: 'all 0.2s',
-          }}
-        >
-          ♡ {version.likeCount}
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            onClick={onLike}
+            disabled={!canLike}
+            className="mono"
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--muted-red)',
+              color: 'var(--muted-red)',
+              padding: '0.3rem 0.8rem',
+              cursor: canLike ? 'pointer' : 'default',
+              fontSize: '0.85rem',
+              fontFamily: 'Space Mono, monospace',
+              transition: 'all 0.2s',
+            }}
+          >
+            ♡ {version.likeCount}
+          </button>
+          {!version.is_original && (
+            <button
+              onClick={onBuildFrom}
+              className="btn btn-sm"
+              style={{ fontSize: '0.75rem' }}
+            >
+              + Build From This
+            </button>
+          )}
+        </div>
       </div>
 
       <div style={{ background: 'var(--deep-black)', padding: '0.75rem', border: '1px solid rgba(255,107,53,0.2)' }}>
@@ -237,11 +294,12 @@ function VersionItem({ version, onLike, canLike }) {
   )
 }
 
-function RemixForm({ songId, isComplete, onSuccess, onCancel }) {
+function RemixForm({ songId, parentVersionId, onSuccess, onCancel }) {
   const { user } = useAuth()
   const [file, setFile] = useState(null)
-  const [notes, setNotes] = useState('')
+  const [contributionNotes, setContributionNotes] = useState('')
   const [versionType, setVersionType] = useState('cowrite')
+  const [aiDisclosure, setAiDisclosure] = useState('human_made')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -255,6 +313,7 @@ function RemixForm({ songId, isComplete, onSuccess, onCancel }) {
   async function submit(e) {
     e.preventDefault()
     if (!file) { setError('Please select a file'); return }
+    if (!contributionNotes.trim()) { setError('Briefly describe what you contributed'); return }
     setLoading(true)
 
     try {
@@ -267,11 +326,15 @@ function RemixForm({ songId, isComplete, onSuccess, onCancel }) {
 
       const { error: versionErr } = await supabase.from('versions').insert({
         song_id: songId,
+        parent_song_id: songId,
+        parent_version_id: parentVersionId,
         user_id: user.id,
         audio_url: publicUrl,
         is_original: false,
         version_type: versionType,
-        notes
+        ai_disclosure: aiDisclosure,
+        contribution_notes: contributionNotes.trim(),
+        notes: ''
       })
       if (versionErr) throw versionErr
 
@@ -285,25 +348,53 @@ function RemixForm({ songId, isComplete, onSuccess, onCancel }) {
 
   return (
     <div style={{ background: 'rgba(10,10,10,0.8)', padding: '1.5rem', border: '1px solid var(--burnt-orange)', marginTop: '1rem' }}>
-      <h4 className="mono" style={{ color: 'var(--burnt-orange)', marginBottom: '1rem' }}>Add Your Version</h4>
-      <p style={{ fontSize: '0.8rem', opacity: 0.7, lineHeight: 1.5, marginBottom: '0.5rem' }}>
-        Your work belongs to you regardless of whether it's selected for distribution. If selected, you'll receive a share of the collaborator pool (50% of total royalties), divided equally among all contributors whose work appears in the approved version.
+      <h4 className="mono" style={{ color: 'var(--burnt-orange)', marginBottom: '0.5rem' }}>
+        {parentVersionId ? 'Build From This Version' : 'Build From Original'}
+      </h4>
+      <p style={{ fontSize: '0.8rem', opacity: 0.7, lineHeight: 1.5, marginBottom: '1rem' }}>
+        Your version will be added to the chain. Splits are equal among everyone in the chain — original artist always at the root. The Contribution Record will reflect your addition.
       </p>
+
       <form onSubmit={submit} style={{ display: 'grid', gap: '0.75rem' }}>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
-          {!isComplete && (
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-              <input type="radio" value="cowrite" checked={versionType === 'cowrite'} onChange={() => setVersionType('cowrite')} />
-              <span className="mono" style={{ fontSize: '0.8rem' }}>Co-write</span>
-            </label>
-          )}
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+            <input type="radio" value="cowrite" checked={versionType === 'cowrite'} onChange={() => setVersionType('cowrite')} />
+            <span className="mono" style={{ fontSize: '0.8rem' }}>Co-write</span>
+          </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
             <input type="radio" value="cover" checked={versionType === 'cover'} onChange={() => setVersionType('cover')} />
             <span className="mono" style={{ fontSize: '0.8rem' }}>Cover</span>
           </label>
         </div>
 
-        <input type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="What did you change? (optional)" />
+        <div>
+          <label className="mono" style={{ fontSize: '0.75rem', display: 'block', marginBottom: '0.4rem', opacity: 0.7 }}>What did you contribute? *</label>
+          <input
+            type="text"
+            value={contributionNotes}
+            onChange={e => setContributionNotes(e.target.value)}
+            placeholder="e.g. added vocals, rewrote bridge, electronic remix"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="mono" style={{ fontSize: '0.75rem', display: 'block', marginBottom: '0.4rem', opacity: 0.7 }}>How was this made? *</label>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+              <input type="radio" value="human_made" checked={aiDisclosure === 'human_made'} onChange={() => setAiDisclosure('human_made')} />
+              <span className="mono" style={{ fontSize: '0.8rem' }}>Human</span>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+              <input type="radio" value="ai_assisted" checked={aiDisclosure === 'ai_assisted'} onChange={() => setAiDisclosure('ai_assisted')} />
+              <span className="mono" style={{ fontSize: '0.8rem' }}>AI-assisted</span>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+              <input type="radio" value="pure_ai" checked={aiDisclosure === 'pure_ai'} onChange={() => setAiDisclosure('pure_ai')} />
+              <span className="mono" style={{ fontSize: '0.8rem' }}>Pure AI</span>
+            </label>
+          </div>
+        </div>
 
         <div style={{ border: '1px dashed var(--accent-yellow)', padding: '1.25rem', textAlign: 'center', position: 'relative', cursor: 'pointer' }}>
           <input type="file" accept="audio/*" onChange={handleFile} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
@@ -316,12 +407,14 @@ function RemixForm({ songId, isComplete, onSuccess, onCancel }) {
 
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
           <input type="checkbox" required style={{ marginTop: 4, width: 16, height: 16 }} />
-          <span style={{ fontSize: '0.8rem', opacity: 0.8, lineHeight: 1.5 }}>I agree to the 50/50 split on co-writes and standard mechanical rates on covers. Unauthorized independent distribution of this collaboration is a violation of CollabForge terms and may constitute copyright infringement.</span>
+          <span style={{ fontSize: '0.8rem', opacity: 0.8, lineHeight: 1.5 }}>
+            I understand splits are equal among the chain, and I'm responsible for any mechanical licenses required for cover material. The Contribution Record reflects the lineage; the platform does not arbitrate.
+          </span>
         </div>
 
         <div style={{ display: 'flex', gap: '0.75rem' }}>
           <button type="submit" className="btn btn-primary btn-sm" disabled={loading}>
-            {loading ? 'Uploading...' : 'Submit Version'}
+            {loading ? 'Uploading...' : 'Add to Chain'}
           </button>
           <button type="button" className="btn btn-sm" onClick={onCancel}>Cancel</button>
         </div>
