@@ -13,6 +13,7 @@ export default function Home() {
   const [showAuth, setShowAuth] = useState(false)
   const [showUpload, setShowUpload] = useState(false)
   const [search, setSearch] = useState('')
+  const [filter, setFilter] = useState('all') // 'all' | 'human' | 'ai'
 
   useEffect(() => { loadSongs() }, [])
 
@@ -21,15 +22,16 @@ export default function Home() {
     const { data, error } = await supabase
       .from('songs')
       .select(`
-  *,
-  versions(
-    *,
-    profiles:user_id(username),
-    version_likes(count)
-  )
-`)
+        *,
+        versions(
+          *,
+          profiles:user_id(username),
+          version_likes(count)
+        )
+      `)
       .order('created_at', { ascending: false })
-if (!error && data) {
+
+    if (!error && data) {
       const formatted = data.map(song => ({
         ...song,
         originalAuthor: song.username,
@@ -50,10 +52,18 @@ if (!error && data) {
     setLoading(false)
   }
 
-  const filtered = songs.filter(s =>
-    s.title?.toLowerCase().includes(search.toLowerCase()) ||
-    s.description?.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = songs.filter(s => {
+    const matchesSearch =
+      s.title?.toLowerCase().includes(search.toLowerCase()) ||
+      s.description?.toLowerCase().includes(search.toLowerCase())
+
+    const matchesFilter =
+      filter === 'all' ||
+      (filter === 'human' && s.ai_disclosure === 'human_made') ||
+      (filter === 'ai' && (s.ai_disclosure === 'ai_assisted' || s.ai_disclosure === 'pure_ai'))
+
+    return matchesSearch && matchesFilter
+  })
 
   return (
     <div style={{ position: 'relative', zIndex: 1 }}>
@@ -63,14 +73,47 @@ if (!error && data) {
       />
 
       <main style={{ maxWidth: 900, margin: '0 auto', padding: '2rem' }}>
-        {/* Search */}
-        <div style={{ marginBottom: '2rem' }}>
+
+        {/* Search and filter */}
+        <div style={{ marginBottom: '2rem', display: 'grid', gap: '0.75rem' }}>
           <input
             type="text"
             placeholder="Search songs by title or mood..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button
+              className="btn btn-sm"
+              onClick={() => setFilter('all')}
+              style={{
+                opacity: filter === 'all' ? 1 : 0.5,
+                borderColor: filter === 'all' ? 'var(--accent-yellow)' : 'rgba(255,255,255,0.2)'
+              }}
+            >
+              All
+            </button>
+            <button
+              className="btn btn-sm"
+              onClick={() => setFilter('human')}
+              style={{
+                opacity: filter === 'human' ? 1 : 0.5,
+                borderColor: filter === 'human' ? 'var(--accent-yellow)' : 'rgba(255,255,255,0.2)'
+              }}
+            >
+              Human-made
+            </button>
+            <button
+              className="btn btn-sm"
+              onClick={() => setFilter('ai')}
+              style={{
+                opacity: filter === 'ai' ? 1 : 0.5,
+                borderColor: filter === 'ai' ? 'var(--accent-yellow)' : 'rgba(255,255,255,0.2)'
+              }}
+            >
+              AI-assisted / Pure AI
+            </button>
+          </div>
         </div>
 
         {/* Songs */}
@@ -81,7 +124,9 @@ if (!error && data) {
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '4rem', opacity: 0.5 }}>
             <p className="mono" style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>
-              {search ? 'No songs match your search.' : 'No songs yet. Be the first to let go.'}
+              {search || filter !== 'all'
+                ? 'No songs match your search.'
+                : 'No songs yet. Be the first to release one to the hive mind.'}
             </p>
             {!user && (
               <button className="btn btn-primary" onClick={() => setShowAuth(true)}>
@@ -104,12 +149,7 @@ if (!error && data) {
       </main>
 
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
+
       {showUpload && (
         <UploadModal
-          onClose={() => setShowUpload(false)}
-          onSuccess={() => { setShowUpload(false); loadSongs() }}
-        />
-      )}
-    </div>
-  )
-}
+          onClose={() => set
