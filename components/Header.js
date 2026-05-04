@@ -34,7 +34,7 @@ export default function Header({ onSignIn, onUpload }) {
             </h1>
           </Link>
           <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.6, marginTop: 2 }}>
-            Let the world finish what you started
+            Give your song a place to grow
           </p>
         </div>
 
