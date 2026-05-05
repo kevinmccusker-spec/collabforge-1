@@ -124,6 +124,11 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
             <audio controls style={{ width: '100%' }}>
               <source src={version.audio_url} />
             </audio>
+            <div style={{ marginTop: '0.5rem', textAlign: 'right' }}>
+              <a href={version.audio_url} download className="mono" style={{ fontSize: '0.7rem', color: 'var(--accent-yellow)', textDecoration: 'none', opacity: 0.7 }}>
+                ↓ Download to build from
+              </a>
+            </div>
           </div>
         ))}
 
@@ -285,6 +290,11 @@ function VersionItem({ version, onLike, onBuildFrom, canLike, disclosureLabel, d
         <audio controls style={{ width: '100%' }}>
           <source src={version.audio_url} />
         </audio>
+        <div style={{ marginTop: '0.5rem', textAlign: 'right' }}>
+          <a href={version.audio_url} download className="mono" style={{ fontSize: '0.7rem', color: 'var(--accent-yellow)', textDecoration: 'none', opacity: 0.7 }}>
+            ↓ Download
+          </a>
+        </div>
       </div>
 
       <p className="mono" style={{ fontSize: '0.7rem', opacity: 0.4, marginTop: '0.5rem' }}>
