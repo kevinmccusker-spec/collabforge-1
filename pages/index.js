@@ -23,7 +23,7 @@ export default function Home() {
       .from('songs')
       .select(`
         *,
-        versions(
+        versions!versions_song_id_fkey(
           *,
           profiles:user_id(username),
           version_likes(count)
