@@ -60,6 +60,7 @@ export default function UploadModal({ onClose, onSuccess }) {
           title,
           description,
           user_id: user.id,
+          username: profile?.username,
           ai_disclosure: aiDisclosure,
           content_type: contentType,
           lyrics_text: contentType === 'lyrics' ? lyricsText.trim() : null,
