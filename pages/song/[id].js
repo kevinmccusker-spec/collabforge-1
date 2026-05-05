@@ -126,6 +126,11 @@ export default function SongPlacard() {
               <audio controls style={{ width: '100%', marginTop: '0.75rem' }}>
                 <source src={version.audio_url} />
               </audio>
+              <div style={{ marginTop: '0.5rem', textAlign: 'right' }}>
+                <a href={version.audio_url} download className="mono" style={{ fontSize: '0.7rem', color: 'var(--accent-yellow)', textDecoration: 'none', opacity: 0.7 }}>
+                  ↓ Download
+                </a>
+              </div>
             </div>
           )
         })}
