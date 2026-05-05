@@ -19,8 +19,8 @@ export default function UploadModal({ onClose, onSuccess }) {
 
   function handleFileChange(e) {
     const f = e.target.files[0]
-    if (f && f.size > 10 * 1024 * 1024) {
-      setError('File must be under 10MB')
+    if (f && f.size > 50 * 1024 * 1024) {
+      setError('File must be under 50MB')
       return
     }
     setFile(f)
@@ -232,7 +232,7 @@ export default function UploadModal({ onClose, onSuccess }) {
               <div className="mono" style={{ color: 'var(--accent-yellow)', pointerEvents: 'none' }}>
                 <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📼</div>
                 <div>{file ? `✓ ${file.name}` : 'Drop your raw track here'}</div>
-                <div style={{ fontSize: '0.75rem', marginTop: '0.4rem', opacity: 0.6 }}>MP3 or WAV · Max 10MB</div>
+                <div style={{ fontSize: '0.75rem', marginTop: '0.4rem', opacity: 0.6 }}>MP3, M4A, or WAV · Max 50MB</div>
               </div>
             </div>
           ) : (
