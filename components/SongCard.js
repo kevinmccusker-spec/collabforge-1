@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../pages/_app'
+import Link from 'next/link'
 
 export default function SongCard({ song, onUpdate, onAuthRequired }) {
   const { user, profile } = useAuth()
@@ -107,9 +108,11 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
 
       {/* Song Header */}
       <div style={{ marginBottom: '0.5rem', paddingRight: '6rem' }}>
-        <h2 className="mono" style={{ fontSize: '1.1rem', color: 'var(--burnt-orange)', letterSpacing: '-1px', marginBottom: '0.4rem' }}>
-          {song.title}
-        </h2>
+        <Link href={`/song/${song.id}`} style={{ textDecoration: 'none' }}>
+          <h2 className="mono" style={{ fontSize: '1.1rem', color: 'var(--burnt-orange)', letterSpacing: '-1px', marginBottom: '0.4rem', cursor: 'pointer' }}>
+            {song.title} <span style={{ fontSize: '0.7rem', opacity: 0.5 }}>↗</span>
+          </h2>
+        </Link>
         {song.description && expanded && (
           <p style={{ marginTop: '0.5rem', lineHeight: 1.6, fontSize: '0.95rem' }}>{song.description}</p>
         )}
@@ -175,9 +178,12 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
                 + Build From Original
               </button>
             )}
-            <button className="btn btn-sm" onClick={() => setExpanded(!expanded)}>
-              {expanded ? 'Collapse ↑' : 'View ↓'}
-            </button>
+            <Link href={`/song/${song.id}`} className="btn btn-sm" style={{ textDecoration: 'none' }}>
+          Studio →
+        </Link>
+        <button className="btn btn-sm" onClick={() => setExpanded(!expanded)}>
+          {expanded ? 'Collapse ↑' : 'View ↓'}
+        </button>
           </div>
         </div>
 
