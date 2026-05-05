@@ -23,7 +23,7 @@ export default function Dashboard() {
     const [{ data: songsData }, { data: versionsData }] = await Promise.all([
       supabase
         .from('songs')
-        .select('*, versions(id, version_likes(count))')
+        .select('*, versions!versions_song_id_fkey(id, version_likes(count))')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false }),
       supabase
@@ -36,6 +36,13 @@ export default function Dashboard() {
     setSongs(songsData || [])
     setVersions(versionsData || [])
     setLoading(false)
+  }
+
+  function disclosureLabel(d) {
+    if (d === 'human_made') return 'HUMAN'
+    if (d === 'ai_assisted') return 'AI-ASSISTED'
+    if (d === 'pure_ai') return 'PURE AI'
+    return 'HUMAN'
   }
 
   if (authLoading) return <div style={{ padding: '4rem', textAlign: 'center', fontFamily: 'Space Mono, monospace', color: 'var(--accent-yellow)' }}>Loading...</div>
@@ -64,7 +71,7 @@ export default function Dashboard() {
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '3rem' }}>
           {[
-            { label: 'Songs Uploaded', value: songs.length },
+            { label: 'Songs Released', value: songs.length },
             { label: 'Versions Created', value: versions.length },
             { label: 'Total Likes', value: totalLikes },
           ].map(stat => (
@@ -85,12 +92,11 @@ export default function Dashboard() {
           {songs.length === 0 ? (
             <p style={{ opacity: 0.5 }}>No songs released yet. Let something go.</p>
           ) : songs.map(song => (
-            <div key={song.id} style={{ background: 'var(--warm-grey)', borderLeft: `4px solid ${song.is_complete ? 'var(--accent-yellow)' : 'var(--burnt-orange)'}`, padding: '1.25rem', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div key={song.id} style={{ background: 'var(--warm-grey)', borderLeft: '4px solid var(--burnt-orange)', padding: '1.25rem', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <p className="mono" style={{ color: 'var(--burnt-orange)', marginBottom: '0.25rem' }}>{song.title}</p>
                 <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.6 }}>
-                  {song.versions?.length || 0} version{song.versions?.length !== 1 ? 's' : ''} ·
-                  {song.is_complete ? ' ✓ Complete' : ' In progress'}
+                  {song.versions?.length || 0} version{song.versions?.length !== 1 ? 's' : ''} · {disclosureLabel(song.ai_disclosure)}
                 </p>
               </div>
               <Link href={`/song/${song.id}`} className="btn btn-sm">Studio →</Link>
@@ -98,25 +104,27 @@ export default function Dashboard() {
           ))}
         </section>
 
-        {/* My Remixes */}
+        {/* My Contributions */}
         <section>
-          <h2 className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '1.2rem', marginBottom: '1.5rem' }}>My Remixes</h2>
+          <h2 className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '1.2rem', marginBottom: '1.5rem' }}>My Contributions</h2>
           {versions.length === 0 ? (
-            <p style={{ opacity: 0.5 }}>No remixes yet. Find a song that speaks to you.</p>
+            <p style={{ opacity: 0.5 }}>No contributions yet. Find a song that speaks to you.</p>
           ) : versions.map(v => (
-            <div key={v.id} style={{ background: 'var(--warm-grey)', borderLeft: '4px solid var(--muted-red)', padding: '1.25rem', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
+            <div key={v.id} style={{ background: 'var(--warm-grey)', borderLeft: '4px solid var(--muted-red)', padding: '1.25rem', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div style={{ flex: 1, minWidth: 200 }}>
                 <p className="mono" style={{ color: 'var(--muted-red)', marginBottom: '0.25rem' }}>
-                  [{v.version_type?.toUpperCase() || 'REMIX'}] {v.songs?.title}
+                  [{v.version_type?.toUpperCase() || 'CONTRIBUTION'}] {v.songs?.title}
                 </p>
                 <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.6 }}>
-                  {v.version_likes?.[0]?.count || 0} likes · original by @{v.songs?.profiles?.username}
+                  {v.version_likes?.[0]?.count || 0} likes · original by @{v.songs?.profiles?.username} · {disclosureLabel(v.ai_disclosure)}
                 </p>
-                  <p className="mono" style={{ fontSize: '0.75rem', marginTop: '0.25rem', color: v.approved ? 'var(--accent-yellow)' : v.approved === false ? 'var(--muted-red)' : 'rgba(255,255,255,0.3)' }}>
-                  {v.approved === true ? '✓ APPROVED FOR DISTRIBUTION' : v.approved === false ? '✗ NOT SELECTED' : '— PENDING REVIEW'}
-                </p>
+                {v.contribution_notes && (
+                  <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '0.25rem', fontStyle: 'italic' }}>
+                    "{v.contribution_notes}"
+                  </p>
+                )}
               </div>
-              <span className="mono" style={{ fontSize: '0.75rem', opacity: 0.5 }}>{v.notes || '—'}</span>
+              <Link href={`/song/${v.song_id}`} className="btn btn-sm">View →</Link>
             </div>
           ))}
         </section>
