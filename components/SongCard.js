@@ -121,19 +121,49 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
         {/* Always show original */}
         {song.versions.filter(v => v.is_original).map(version => (
           <div key={version.id} style={{ background: 'rgba(10,10,10,0.6)', padding: '0.75rem', borderLeft: '2px solid var(--accent-yellow)' }}>
-            <audio controls style={{ width: '100%' }}>
-              <source src={version.audio_url} />
-            </audio>
-            <div style={{ marginTop: '0.5rem', textAlign: 'right' }}>
-              <a href={version.audio_url} download className="mono" style={{ fontSize: '0.7rem', color: 'var(--accent-yellow)', textDecoration: 'none', opacity: 0.7 }}>
-                ↓ Download to build from
-              </a>
-            </div>
+            {song.content_type === 'lyrics' ? (
+              <>
+                <div style={{
+                  background: 'rgba(255,200,87,0.05)',
+                  padding: '1.5rem',
+                  fontFamily: 'Georgia, serif',
+                  fontSize: '1rem',
+                  lineHeight: 1.8,
+                  whiteSpace: 'pre-wrap',
+                  textAlign: 'center',
+                  color: 'var(--cream)',
+                  fontStyle: 'italic'
+                }}>
+                  {song.lyrics_text}
+                </div>
+                <div style={{ marginTop: '0.5rem', textAlign: 'right' }}>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(song.lyrics_text)}
+                    className="mono"
+                    style={{ background: 'none', border: 'none', fontSize: '0.7rem', color: 'var(--accent-yellow)', cursor: 'pointer', opacity: 0.7 }}
+                  >
+                    📋 Copy lyrics
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <audio controls style={{ width: '100%' }}>
+                  <source src={version.audio_url} />
+                </audio>
+                <div style={{ marginTop: '0.5rem', textAlign: 'right' }}>
+                  <a href={version.audio_url} download className="mono" style={{ fontSize: '0.7rem', color: 'var(--accent-yellow)', textDecoration: 'none', opacity: 0.7 }}>
+                    ↓ Download to build from
+                  </a>
+                </div>
+              </>
+            )}
           </div>
         ))}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
           <span className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '0.85rem' }}>
+            {song.content_type === 'lyrics' && song.needs_music && '🎵 Looking for music · '}
             {collaborations} version{collaborations !== 1 ? 's' : ''} · by @{song.originalAuthor} · {formatDate(song.created_at)}
           </span>
           <div style={{ display: 'flex', gap: '0.75rem' }}>
