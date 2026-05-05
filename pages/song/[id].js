@@ -123,14 +123,44 @@ export default function SongPlacard() {
                 </div>
               </div>
 
-              <audio controls style={{ width: '100%', marginTop: '0.75rem' }}>
-                <source src={version.audio_url} />
-              </audio>
-              <div style={{ marginTop: '0.5rem', textAlign: 'right' }}>
-                <a href={version.audio_url} download className="mono" style={{ fontSize: '0.7rem', color: 'var(--accent-yellow)', textDecoration: 'none', opacity: 0.7 }}>
-                  ↓ Download
-                </a>
-              </div>
+              {version.is_original && song.content_type === 'lyrics' ? (
+                <>
+                  <div style={{
+                    background: 'rgba(255,200,87,0.05)',
+                    padding: '1.5rem',
+                    marginTop: '0.75rem',
+                    fontFamily: 'Georgia, serif',
+                    fontSize: '1rem',
+                    lineHeight: 1.8,
+                    whiteSpace: 'pre-wrap',
+                    textAlign: 'center',
+                    color: 'var(--cream)',
+                    fontStyle: 'italic'
+                  }}>
+                    {song.lyrics_text}
+                  </div>
+                  <div style={{ marginTop: '0.5rem', textAlign: 'right' }}>
+                    <button
+                      onClick={() => navigator.clipboard.writeText(song.lyrics_text)}
+                      className="mono"
+                      style={{ background: 'none', border: 'none', fontSize: '0.7rem', color: 'var(--accent-yellow)', cursor: 'pointer', opacity: 0.7 }}
+                    >
+                      📋 Copy lyrics
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <audio controls style={{ width: '100%', marginTop: '0.75rem' }}>
+                    <source src={version.audio_url} />
+                  </audio>
+                  <div style={{ marginTop: '0.5rem', textAlign: 'right' }}>
+                    <a href={version.audio_url} download className="mono" style={{ fontSize: '0.7rem', color: 'var(--accent-yellow)', textDecoration: 'none', opacity: 0.7 }}>
+                      ↓ Download
+                    </a>
+                  </div>
+                </>
+              )}
             </div>
           )
         })}
