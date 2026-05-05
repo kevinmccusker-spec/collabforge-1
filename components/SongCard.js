@@ -315,7 +315,7 @@ function RemixForm({ songId, parentVersionId, onSuccess, onCancel }) {
 
   function handleFile(e) {
     const f = e.target.files[0]
-    if (f && f.size > 10 * 1024 * 1024) { setError('File must be under 10MB'); return }
+    if (f && f.size > 10 * 1024 * 1024) { setError('File must be under 50MB'); return }
     setFile(f)
     setError('')
   }
@@ -409,7 +409,7 @@ function RemixForm({ songId, parentVersionId, onSuccess, onCancel }) {
         <div style={{ border: '1px dashed var(--accent-yellow)', padding: '1.25rem', textAlign: 'center', position: 'relative', cursor: 'pointer' }}>
           <input type="file" accept="audio/*" onChange={handleFile} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
           <span className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '0.85rem' }}>
-            {file ? `✓ ${file.name}` : '📼 Upload your version (max 10MB)'}
+            {file ? `✓ ${file.name}` : '📼 Upload your version (max 50MB)'}
           </span>
         </div>
 
