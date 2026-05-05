@@ -315,7 +315,7 @@ function RemixForm({ songId, parentVersionId, onSuccess, onCancel }) {
 
   function handleFile(e) {
     const f = e.target.files[0]
-    if (f && f.size > 10 * 1024 * 1024) { setError('File must be under 50MB'); return }
+    if (f && f.size > 50 * 1024 * 1024) { setError('File must be under 50MB'); return }
     setFile(f)
     setError('')
   }
