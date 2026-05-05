@@ -16,14 +16,26 @@ export default function App({ Component, pageProps }) {
       if (session?.user) loadProfile(session.user.id)
       setLoading(false)
     })
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
       if (session?.user) loadProfile(session.user.id)
       else setProfile(null)
     })
-
     return () => subscription.unsubscribe()
+  }, [])
+
+  // Global audio coordination — only one audio element plays at a time
+  useEffect(() => {
+    function handlePlay(e) {
+      const audios = document.querySelectorAll('audio')
+      audios.forEach(audio => {
+        if (audio !== e.target && !audio.paused) {
+          audio.pause()
+        }
+      })
+    }
+    document.addEventListener('play', handlePlay, true)
+    return () => document.removeEventListener('play', handlePlay, true)
   }, [])
 
   async function loadProfile(userId) {
