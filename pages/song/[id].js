@@ -3,15 +3,22 @@ import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../_app'
 import Header from '../../components/Header'
+import AuthModal from '../../components/AuthModal'
 
 export default function SongPlacard() {
   const router = useRouter()
   const { id } = router.query
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const [song, setSong] = useState(null)
   const [versions, setVersions] = useState([])
+  const [comments, setComments] = useState([])
   const [loading, setLoading] = useState(true)
   const [showRecord, setShowRecord] = useState(false)
+  const [showAuth, setShowAuth] = useState(false)
+  const [authReason, setAuthReason] = useState(null)
+  const [liking, setLiking] = useState(false)
+  const [commentDrafts, setCommentDrafts] = useState({})
+  const [submittingComment, setSubmittingComment] = useState({})
 
   useEffect(() => {
     if (id) loadSong()
@@ -28,16 +35,84 @@ export default function SongPlacard() {
 
     const { data: versionsData } = await supabase
       .from('versions')
-      .select('*, profiles:user_id(username)')
+      .select('*, profiles:user_id(username), version_likes(user_id)')
       .eq('song_id', id)
       .order('created_at', { ascending: true })
 
+    const enriched = (versionsData || []).map(v => ({
+      ...v,
+      likeCount: v.version_likes?.length || 0,
+      likedByMe: user ? v.version_likes?.some(l => l.user_id === user.id) : false
+    }))
+
+    const { data: commentsData } = await supabase
+      .from('comments')
+      .select('*')
+      .eq('song_id', id)
+      .not('version_id', 'is', null)
+      .order('created_at', { ascending: false })
+
     setSong(songData)
-    setVersions(versionsData || [])
+    setVersions(enriched)
+    setComments(commentsData || [])
     setLoading(false)
   }
 
-  // Compute chain depth for each version by walking parent_version_id back to null
+  async function toggleLike(versionId) {
+    if (!user) {
+      setAuthReason('vote')
+      setShowAuth(true)
+      return
+    }
+    if (liking) return
+    setLiking(true)
+
+    const { data: existing } = await supabase
+      .from('version_likes')
+      .select('id')
+      .eq('version_id', versionId)
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (existing) {
+      await supabase.from('version_likes').delete().eq('id', existing.id)
+    } else {
+      await supabase.from('version_likes').insert({ version_id: versionId, user_id: user.id })
+    }
+
+    setLiking(false)
+    loadSong()
+  }
+
+  async function submitComment(versionId) {
+    if (!user) {
+      setAuthReason('comment')
+      setShowAuth(true)
+      return
+    }
+    if (!profile?.username) return // handle gate — UI shows fallback
+    const body = (commentDrafts[versionId] || '').trim()
+    if (!body) return
+
+    setSubmittingComment(prev => ({ ...prev, [versionId]: true }))
+    await supabase.from('comments').insert({
+      song_id: id,
+      version_id: versionId,
+      user_id: user.id,
+      username: profile.username,
+      body
+    })
+    setCommentDrafts(prev => ({ ...prev, [versionId]: '' }))
+    setSubmittingComment(prev => ({ ...prev, [versionId]: false }))
+    loadSong()
+  }
+
+  async function deleteComment(commentId) {
+    if (!window.confirm('Delete this comment?')) return
+    await supabase.from('comments').delete().eq('id', commentId)
+    loadSong()
+  }
+
   function getChainDepth(version, allVersions) {
     let depth = 0
     let current = version
@@ -50,20 +125,6 @@ export default function SongPlacard() {
     return depth
   }
 
-  // Build the full ancestry chain for a version (used in placard)
-  function getChain(version, allVersions) {
-    const chain = [version]
-    let current = version
-    while (current?.parent_version_id) {
-      const parent = allVersions.find(v => v.id === current.parent_version_id)
-      if (!parent) break
-      chain.unshift(parent)
-      current = parent
-    }
-    return chain
-  }
-
-  // AI disclosure display label
   function disclosureLabel(disclosure) {
     if (disclosure === 'human_made') return 'HUMAN'
     if (disclosure === 'ai_assisted') return 'AI-ASSISTED'
@@ -75,7 +136,10 @@ export default function SongPlacard() {
 
   return (
     <div style={{ position: 'relative', zIndex: 1 }}>
-      <Header onSignIn={() => {}} onUpload={() => {}} />
+      <Header
+        onSignIn={() => { setAuthReason(null); setShowAuth(true) }}
+        onUpload={() => { if (!user) { setAuthReason(null); setShowAuth(true) } else { router.push('/') } }}
+      />
       <main style={{ maxWidth: 800, margin: '0 auto', padding: '2rem' }}>
 
         {/* Song Header */}
@@ -94,6 +158,7 @@ export default function SongPlacard() {
         {versions.map(version => {
           const depth = getChainDepth(version, versions)
           const indent = depth * 24
+          const versionComments = comments.filter(c => c.version_id === version.id)
           return (
             <div key={version.id} style={{
               background: 'var(--warm-grey)',
@@ -161,17 +226,85 @@ export default function SongPlacard() {
                   </div>
                 </>
               )}
+
+              {/* Like + comment count bar */}
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem', alignItems: 'center' }}>
+                <button
+                  onClick={() => toggleLike(version.id)}
+                  disabled={liking}
+                  className="mono"
+                  style={{
+                    background: version.likedByMe ? 'var(--muted-red)' : 'transparent',
+                    border: '1px solid var(--muted-red)',
+                    color: version.likedByMe ? 'var(--cream)' : 'var(--muted-red)',
+                    padding: '0.3rem 0.8rem',
+                    cursor: liking ? 'wait' : 'pointer',
+                    fontSize: '0.85rem',
+                    fontFamily: 'Space Mono, monospace',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {version.likedByMe ? '♥' : '♡'} {version.likeCount}
+                </button>
+                <span className="mono" style={{ fontSize: '0.75rem', opacity: 0.5 }}>
+                  💬 {versionComments.length}
+                </span>
+              </div>
+
+              {/* Comments thread for this version */}
+              <div style={{ marginTop: '1rem', borderTop: '1px solid rgba(255,107,53,0.15)', paddingTop: '0.75rem' }}>
+                {versionComments.map(c => (
+                  <div key={c.id} style={{ marginBottom: '0.6rem', borderLeft: '2px solid rgba(255,107,53,0.3)', paddingLeft: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                    <div style={{ flex: 1 }}>
+                      <p className="mono" style={{ fontSize: '0.7rem', color: 'var(--accent-yellow)', marginBottom: '0.15rem' }}>
+                        @{c.username}
+                        <span style={{ marginLeft: '0.5rem', opacity: 0.5 }}>{new Date(c.created_at).toLocaleDateString()}</span>
+                      </p>
+                      <p style={{ fontSize: '0.85rem', opacity: 0.85 }}>{c.body}</p>
+                    </div>
+                    {user && c.user_id === user.id && (
+                      <button onClick={() => deleteComment(c.id)} style={{ background: 'none', border: 'none', color: 'var(--muted-red)', cursor: 'pointer', fontSize: '0.75rem', fontFamily: 'Space Mono, monospace', opacity: 0.6 }}>✕</button>
+                    )}
+                  </div>
+                ))}
+
+                {/* Comment input — handle-gated */}
+                {user && !profile?.username ? (
+                  <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.6, marginTop: '0.5rem', fontStyle: 'italic' }}>
+                    Set a handle on your profile to comment.
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                    <textarea
+                      value={commentDrafts[version.id] || ''}
+                      onChange={e => setCommentDrafts(prev => ({ ...prev, [version.id]: e.target.value }))}
+                      onFocus={() => { if (!user) { setAuthReason('comment'); setShowAuth(true) } }}
+                      placeholder="Leave a comment on this version..."
+                      rows={2}
+                      style={{ flex: 1, resize: 'vertical', fontSize: '0.85rem' }}
+                    />
+                    <button
+                      onClick={() => submitComment(version.id)}
+                      className="btn btn-sm"
+                      disabled={submittingComment[version.id]}
+                      style={{ alignSelf: 'flex-end' }}
+                    >
+                      {submittingComment[version.id] ? '...' : 'Post'}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )
         })}
 
-        {/* Contribution Record + Distribution always available */}
+        {/* Contribution Record button */}
         <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,107,53,0.25)', paddingTop: '2rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
           <button className="btn btn-sm" onClick={() => setShowRecord(true)}>+ Record</button>
           <span className="mono" style={{ fontSize: '0.75rem', opacity: 0.5 }}>Lineage of contributions on this song</span>
         </div>
 
-        {/* Distribution buttons — always available now */}
+        {/* Distribution buttons */}
         <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,107,53,0.25)', paddingTop: '2rem' }}>
           <h2 className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '1rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: 1 }}>Distribute Your Version</h2>
           <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.5, marginBottom: '1rem' }}>Anyone in the chain can release their version. Use the Record above for split sheet info.</p>
@@ -198,8 +331,7 @@ export default function SongPlacard() {
 
               {versions.map(version => {
                 const depth = getChainDepth(version, versions)
-                const chainLength = depth + 1 // +1 for the original song itself in the chain
-                const splitPercent = Math.round(100 / (chainLength + 1)) // +1 because original artist is always in the split
+                const chainLength = depth + 1
                 return (
                   <div key={version.id} style={{
                     borderLeft: `2px solid ${version.is_original ? 'var(--accent-yellow)' : 'var(--burnt-orange)'}`,
@@ -231,6 +363,14 @@ export default function SongPlacard() {
               <button className="btn btn-sm" onClick={() => window.print()} style={{ marginTop: '1.5rem' }}>Print / Save PDF</button>
             </div>
           </div>
+        )}
+
+        {/* Auth Modal */}
+        {showAuth && (
+          <AuthModal
+            onClose={() => { setShowAuth(false); setAuthReason(null); loadSong() }}
+            reason={authReason}
+          />
         )}
 
       </main>
