@@ -21,7 +21,8 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
       .from('comments')
       .select('*')
       .eq('song_id', song.id)
-      .order('created_at', { ascending: true })
+      .is('version_id', null)
+      .order('created_at', { ascending: false })
     setComments(data || [])
   }
 
@@ -33,12 +34,13 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
   async function submitComment(e) {
     e.preventDefault()
     if (!user) { onAuthRequired(); return }
+    if (!profile?.username) return
     if (!commentBody.trim()) return
     setSubmittingComment(true)
     await supabase.from('comments').insert({
       song_id: song.id,
       user_id: user.id,
-      username: profile?.username || user.email?.split('@')[0],
+      username: profile.username,
       body: commentBody.trim()
     })
     setCommentBody('')
@@ -56,7 +58,7 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
       .select('id')
       .eq('version_id', versionId)
       .eq('user_id', user.id)
-      .single()
+      .maybeSingle()
 
     if (existing) {
       await supabase.from('version_likes').delete().eq('id', existing.id)
@@ -161,6 +163,25 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
                 </div>
               </>
             )}
+            {/* Like button for original — required for home redesign winning logic */}
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+              <button
+                onClick={() => toggleLike(version.id)}
+                disabled={liking}
+                className="mono"
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--muted-red)',
+                  color: 'var(--muted-red)',
+                  padding: '0.3rem 0.8rem',
+                  cursor: liking ? 'wait' : 'pointer',
+                  fontSize: '0.85rem',
+                  fontFamily: 'Space Mono, monospace'
+                }}
+              >
+                ♡ {version.likeCount || 0}
+              </button>
+            </div>
           </div>
         ))}
 
@@ -179,11 +200,11 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
               </button>
             )}
             <Link href={`/song/${song.id}`} className="btn btn-sm" style={{ textDecoration: 'none' }}>
-          Studio →
-        </Link>
-        <button className="btn btn-sm" onClick={() => setExpanded(!expanded)}>
-          {expanded ? 'Collapse ↑' : 'View ↓'}
-        </button>
+              Studio →
+            </Link>
+            <button className="btn btn-sm" onClick={() => setExpanded(!expanded)}>
+              {expanded ? 'Collapse ↑' : 'View ↓'}
+            </button>
           </div>
         </div>
 
@@ -240,18 +261,24 @@ export default function SongCard({ song, onUpdate, onAuthRequired }) {
                 </div>
               ))}
 
-              <form onSubmit={submitComment} style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
-                <textarea
-                  value={commentBody}
-                  onChange={e => setCommentBody(e.target.value)}
-                  placeholder={song.needs_music ? 'Suggest lyrics or finish a line...' : 'Leave a comment...'}
-                  rows={2}
-                  style={{ flex: 1, resize: 'vertical', fontSize: '0.85rem' }}
-                />
-                <button type="submit" className="btn btn-sm" disabled={submittingComment} style={{ alignSelf: 'flex-end' }}>
-                  {submittingComment ? '...' : 'Post'}
-                </button>
-              </form>
+              {user && !profile?.username ? (
+                <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.6, marginTop: '0.5rem', fontStyle: 'italic' }}>
+                  Set a handle on your profile to comment.
+                </p>
+              ) : (
+                <form onSubmit={submitComment} style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                  <textarea
+                    value={commentBody}
+                    onChange={e => setCommentBody(e.target.value)}
+                    placeholder={song.needs_music ? 'Suggest lyrics or finish a line...' : 'Leave a comment...'}
+                    rows={2}
+                    style={{ flex: 1, resize: 'vertical', fontSize: '0.85rem' }}
+                  />
+                  <button type="submit" className="btn btn-sm" disabled={submittingComment} style={{ alignSelf: 'flex-end' }}>
+                    {submittingComment ? '...' : 'Post'}
+                  </button>
+                </form>
+              )}
             </div>
           </>
         )}
