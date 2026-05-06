@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-export default function AuthModal({ onClose }) {
+export default function AuthModal({ onClose, reason }) {
   const [mode, setMode] = useState('signin')
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
@@ -54,9 +54,25 @@ export default function AuthModal({ onClose }) {
           style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--cream)', fontSize: '1.5rem', cursor: 'pointer' }}
         >×</button>
 
-        <h2 className="mono" style={{ color: 'var(--burnt-orange)', marginBottom: '1.5rem', fontSize: '1.5rem' }}>
+        <h2 className="mono" style={{ color: 'var(--burnt-orange)', marginBottom: reason ? '0.5rem' : '1.5rem', fontSize: '1.5rem' }}>
           {mode === 'signup' ? 'Join CollabForge' : 'Welcome Back'}
         </h2>
+
+        {reason && mode === 'signup' && (
+          <p style={{ marginBottom: '1.5rem', opacity: 0.85, lineHeight: 1.5, fontSize: '0.95rem' }}>
+            {reason === 'vote' && 'Vote on versions, leave comments, build on songs you love.'}
+            {reason === 'comment' && 'Add your voice to the conversation. Co-write, comment, vote.'}
+            {reason === 'build' && 'Add your version to the chain. Co-write or cover any song here.'}
+          </p>
+        )}
+
+        {reason && mode === 'signin' && (
+          <p style={{ marginBottom: '1.5rem', opacity: 0.85, lineHeight: 1.5, fontSize: '0.95rem' }}>
+            Sign in to {reason === 'vote' && 'vote on this version.'}
+            {reason === 'comment' && 'join the conversation.'}
+            {reason === 'build' && 'add your version to this chain.'}
+          </p>
+        )}
 
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1rem' }}>
           {mode === 'signup' && (
