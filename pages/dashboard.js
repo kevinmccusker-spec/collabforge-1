@@ -28,7 +28,7 @@ export default function Dashboard() {
         .order('created_at', { ascending: false }),
       supabase
         .from('versions')
-        .select('*, songs(title, user_id, public_profiles:user_id(username)), version_likes(count)')
+        .select('*, songs(title, user_id), version_likes(count)')
         .eq('user_id', user.id)
         .eq('is_original', false)
         .order('created_at', { ascending: false })
