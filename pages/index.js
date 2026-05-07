@@ -25,7 +25,7 @@ export default function Home() {
         *,
         versions!versions_song_id_fkey(
           *,
-          profiles:user_id(username),
+          public_profiles:user_id(username),
           version_likes(count)
         )
       `)
@@ -38,7 +38,7 @@ export default function Home() {
         versions: (song.versions || [])
           .map(v => ({
             ...v,
-            creator: v.profiles?.username,
+            creator: v.public_profiles?.username,
             likeCount: v.version_likes?.[0]?.count || 0
           }))
           .sort((a, b) => {
