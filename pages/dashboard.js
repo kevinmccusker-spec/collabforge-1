@@ -20,26 +20,35 @@ export default function Dashboard() {
 
   async function loadData() {
     setLoading(true)
-    const [{ data: songsData }, { data: versionsData }] = await Promise.all([
-      supabase
-        .from('songs')
-        .select('*, versions!versions_song_id_fkey(id, version_likes(count))')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('versions')
-        .select('*, songs(title, user_id), version_likes(count)')
-        .eq('user_id', user.id)
-        .eq('is_original', false)
-        .order('created_at', { ascending: false })
-    ])
+
+    const songsResponse = await supabase
+      .from('songs')
+      .select('*, versions!versions_song_id_fkey(id, version_likes(count))')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+
+    const versionsResponse = await supabase
+      .from('versions')
+      .select('*, songs(title, user_id), version_likes(count)')
+      .eq('user_id', user.id)
+      .eq('is_original', false)
+      .order('created_at', { ascending: false })
+
     console.log('=== DASHBOARD DEBUG ===')
     console.log('user.id:', user.id)
-    console.log('songsData:', songsData)
-    console.log('versionsData:', versionsData)
+    console.log('songsResponse:', songsResponse)
+    console.log('versionsResponse:', versionsResponse)
+    if (versionsResponse.error) {
+      console.error('VERSIONS QUERY ERROR:', versionsResponse.error)
+      console.error('Error message:', versionsResponse.error.message)
+      console.error('Error details:', versionsResponse.error.details)
+      console.error('Error hint:', versionsResponse.error.hint)
+      console.error('Error code:', versionsResponse.error.code)
+    }
     console.log('======================')
-    setSongs(songsData || [])
-    setVersions(versionsData || [])
+
+    setSongs(songsResponse.data || [])
+    setVersions(versionsResponse.data || [])
     setLoading(false)
   }
 
