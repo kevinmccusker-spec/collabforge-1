@@ -27,7 +27,7 @@ export default function SongPlacard() {
   async function loadSong() {
     const { data: songData } = await supabase
       .from('songs')
-      .select('*, profiles:user_id(username)')
+      .select('*, public_profiles:user_id(username)')
       .eq('id', id)
       .single()
 
@@ -35,7 +35,7 @@ export default function SongPlacard() {
 
     const { data: versionsData } = await supabase
       .from('versions')
-      .select('*, profiles:user_id(username), version_likes(user_id)')
+      .select('*, public_profiles:user_id(username), version_likes(user_id)')
       .eq('song_id', id)
       .order('created_at', { ascending: true })
 
@@ -147,7 +147,7 @@ export default function SongPlacard() {
         <div style={{ borderLeft: '4px solid var(--burnt-orange)', paddingLeft: '1.5rem', marginBottom: '2rem' }}>
           <h1 className="mono" style={{ color: 'var(--burnt-orange)', fontSize: '1.8rem', marginBottom: '0.5rem' }}>{song.title}</h1>
           <p className="mono" style={{ opacity: 0.6, fontSize: '0.85rem' }}>
-            Original by @{song.profiles?.username} · {new Date(song.created_at).toLocaleDateString()} · {disclosureLabel(song.ai_disclosure)}
+            Original by @{song.public_profiles?.username} · {new Date(song.created_at).toLocaleDateString()} · {disclosureLabel(song.ai_disclosure)}
           </p>
           {song.description && <p style={{ marginTop: '0.75rem', opacity: 0.8 }}>{song.description}</p>}
         </div>
@@ -172,7 +172,7 @@ export default function SongPlacard() {
                 <div style={{ flex: 1 }}>
                   <p className="mono" style={{ fontSize: '0.9rem', marginBottom: '0.25rem' }}>
                     {version.is_original ? '★ ORIGINAL' : `[${version.version_type?.toUpperCase() || 'COWRITE'}]`}
-                    {' '}@{version.profiles?.username}
+                    {' '}@{version.public_profiles?.username}
                     {' · '}<span style={{ opacity: 0.6, fontSize: '0.75rem' }}>{disclosureLabel(version.ai_disclosure)}</span>
                   </p>
                   <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.5 }}>
@@ -324,7 +324,7 @@ export default function SongPlacard() {
               <p className="mono" style={{ fontSize: '0.7rem', opacity: 0.5, letterSpacing: 2, marginBottom: '1rem' }}>COLLABFORGE.IO · CONTRIBUTION RECORD</p>
               <h2 className="mono" style={{ color: 'var(--burnt-orange)', fontSize: '1.5rem', marginBottom: '0.5rem' }}>{song.title}</h2>
               <p className="mono" style={{ fontSize: '0.8rem', opacity: 0.6, marginBottom: '2rem' }}>
-                Original by @{song.profiles?.username} · {new Date(song.created_at).toLocaleDateString()} · {disclosureLabel(song.ai_disclosure)}
+                Original by @{song.public_profiles?.username} · {new Date(song.created_at).toLocaleDateString()} · {disclosureLabel(song.ai_disclosure)}
               </p>
 
               <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.6, marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: 1 }}>Lineage</p>
@@ -340,7 +340,7 @@ export default function SongPlacard() {
                     marginBottom: '1rem'
                   }}>
                     <p className="mono" style={{ fontSize: '0.85rem', marginBottom: '0.25rem' }}>
-                      {version.is_original ? '★ ORIGINAL' : `[${version.version_type?.toUpperCase()}]`} @{version.profiles?.username}
+                      {version.is_original ? '★ ORIGINAL' : `[${version.version_type?.toUpperCase()}]`} @{version.public_profiles?.username}
                       {' · '}<span style={{ opacity: 0.6, fontSize: '0.7rem' }}>{disclosureLabel(version.ai_disclosure)}</span>
                     </p>
                     <p className="mono" style={{ fontSize: '0.7rem', opacity: 0.5 }}>{new Date(version.created_at).toLocaleString()}</p>
