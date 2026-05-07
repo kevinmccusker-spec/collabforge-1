@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../_app'
 import Header from '../../components/Header'
 import AuthModal from '../../components/AuthModal'
+import RemixForm from '../../components/RemixForm'
 
 export default function SongPlacard() {
   const router = useRouter()
@@ -19,6 +20,7 @@ export default function SongPlacard() {
   const [liking, setLiking] = useState(false)
   const [commentDrafts, setCommentDrafts] = useState({})
   const [submittingComment, setSubmittingComment] = useState({})
+  const [showRemixFor, setShowRemixFor] = useState(null) // null | versionId | 'original'
 
   useEffect(() => {
     if (id) loadSong()
@@ -90,7 +92,7 @@ export default function SongPlacard() {
       setShowAuth(true)
       return
     }
-    if (!profile?.username) return // handle gate — UI shows fallback
+    if (!profile?.username) return
     const body = (commentDrafts[versionId] || '').trim()
     if (!body) return
 
@@ -111,6 +113,15 @@ export default function SongPlacard() {
     if (!window.confirm('Delete this comment?')) return
     await supabase.from('comments').delete().eq('id', commentId)
     loadSong()
+  }
+
+  function handleBuildClick(versionId) {
+    if (!user) {
+      setAuthReason('build')
+      setShowAuth(true)
+      return
+    }
+    setShowRemixFor(versionId)
   }
 
   function getChainDepth(version, allVersions) {
@@ -160,140 +171,160 @@ export default function SongPlacard() {
           const indent = depth * 24
           const versionComments = comments.filter(c => c.version_id === version.id)
           return (
-            <div key={version.id} style={{
-              background: 'var(--warm-grey)',
-              borderLeft: `4px solid ${version.is_original ? 'var(--accent-yellow)' : 'var(--burnt-orange)'}`,
-              padding: '1.25rem',
-              marginBottom: '1rem',
-              marginLeft: `${indent}px`,
-              position: 'relative'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ flex: 1 }}>
-                  <p className="mono" style={{ fontSize: '0.9rem', marginBottom: '0.25rem' }}>
-                    {version.is_original ? '★ ORIGINAL' : `[${version.version_type?.toUpperCase() || 'COWRITE'}]`}
-                    {' '}@{version.public_profiles?.username}
-                    {' · '}<span style={{ opacity: 0.6, fontSize: '0.75rem' }}>{disclosureLabel(version.ai_disclosure)}</span>
-                  </p>
-                  <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.5 }}>
-                    {new Date(version.created_at).toLocaleString()}
-                    {depth > 0 && <span style={{ marginLeft: '0.5rem' }}>· built on a previous version</span>}
-                  </p>
-                  {version.contribution_notes && (
-                    <p className="mono" style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: '0.5rem', fontStyle: 'italic' }}>
-                      "{version.contribution_notes}"
+            <div key={version.id}>
+              <div style={{
+                background: 'var(--warm-grey)',
+                borderLeft: `4px solid ${version.is_original ? 'var(--accent-yellow)' : 'var(--burnt-orange)'}`,
+                padding: '1.25rem',
+                marginBottom: '1rem',
+                marginLeft: `${indent}px`,
+                position: 'relative'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1 }}>
+                    <p className="mono" style={{ fontSize: '0.9rem', marginBottom: '0.25rem' }}>
+                      {version.is_original ? '★ ORIGINAL' : `[${version.version_type?.toUpperCase() || 'COWRITE'}]`}
+                      {' '}@{version.public_profiles?.username}
+                      {' · '}<span style={{ opacity: 0.6, fontSize: '0.75rem' }}>{disclosureLabel(version.ai_disclosure)}</span>
                     </p>
+                    <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.5 }}>
+                      {new Date(version.created_at).toLocaleString()}
+                      {depth > 0 && <span style={{ marginLeft: '0.5rem' }}>· built on a previous version</span>}
+                    </p>
+                    {version.contribution_notes && (
+                      <p className="mono" style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: '0.5rem', fontStyle: 'italic' }}>
+                        "{version.contribution_notes}"
+                      </p>
+                    )}
+                    {version.notes && <p style={{ fontSize: '0.85rem', opacity: 0.7, marginTop: '0.5rem' }}>{version.notes}</p>}
+                  </div>
+                </div>
+
+                {version.is_original && song.content_type === 'lyrics' ? (
+                  <>
+                    <div style={{
+                      background: 'rgba(255,200,87,0.05)',
+                      padding: '1.5rem',
+                      marginTop: '0.75rem',
+                      fontFamily: 'Georgia, serif',
+                      fontSize: '1rem',
+                      lineHeight: 1.8,
+                      whiteSpace: 'pre-wrap',
+                      textAlign: 'center',
+                      color: 'var(--cream)',
+                      fontStyle: 'italic'
+                    }}>
+                      {song.lyrics_text}
+                    </div>
+                    <div style={{ marginTop: '0.5rem', textAlign: 'right' }}>
+                      <button
+                        onClick={() => navigator.clipboard.writeText(song.lyrics_text)}
+                        className="mono"
+                        style={{ background: 'none', border: 'none', fontSize: '0.7rem', color: 'var(--accent-yellow)', cursor: 'pointer', opacity: 0.7 }}
+                      >
+                        📋 Copy lyrics
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <audio controls style={{ width: '100%', marginTop: '0.75rem' }}>
+                      <source src={version.audio_url} />
+                    </audio>
+                    <div style={{ marginTop: '0.5rem', textAlign: 'right' }}>
+                      <a href={version.audio_url} download target="_blank" rel="noopener noreferrer" className="mono" style={{ fontSize: '0.7rem', color: 'var(--accent-yellow)', textDecoration: 'none', opacity: 0.7 }}>
+                        ↓ Download
+                      </a>
+                    </div>
+                  </>
+                )}
+
+                {/* Like + comment count + Build bar */}
+                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => toggleLike(version.id)}
+                    disabled={liking}
+                    className="mono"
+                    style={{
+                      background: version.likedByMe ? 'var(--muted-red)' : 'transparent',
+                      border: '1px solid var(--muted-red)',
+                      color: version.likedByMe ? 'var(--cream)' : 'var(--muted-red)',
+                      padding: '0.3rem 0.8rem',
+                      cursor: liking ? 'wait' : 'pointer',
+                      fontSize: '0.85rem',
+                      fontFamily: 'Space Mono, monospace',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {version.likedByMe ? '♥' : '♡'} {version.likeCount}
+                  </button>
+                  <span className="mono" style={{ fontSize: '0.75rem', opacity: 0.5 }}>
+                    💬 {versionComments.length}
+                  </span>
+                  <button
+                    onClick={() => handleBuildClick(version.is_original ? 'original' : version.id)}
+                    className="btn btn-sm"
+                    style={{ fontSize: '0.75rem', marginLeft: 'auto' }}
+                  >
+                    + Build From {version.is_original ? 'Original' : 'This Version'}
+                  </button>
+                </div>
+
+                {/* Comments thread for this version */}
+                <div style={{ marginTop: '1rem', borderTop: '1px solid rgba(255,107,53,0.15)', paddingTop: '0.75rem' }}>
+                  {versionComments.map(c => (
+                    <div key={c.id} style={{ marginBottom: '0.6rem', borderLeft: '2px solid rgba(255,107,53,0.3)', paddingLeft: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                      <div style={{ flex: 1 }}>
+                        <p className="mono" style={{ fontSize: '0.7rem', color: 'var(--accent-yellow)', marginBottom: '0.15rem' }}>
+                          @{c.username}
+                          <span style={{ marginLeft: '0.5rem', opacity: 0.5 }}>{new Date(c.created_at).toLocaleDateString()}</span>
+                        </p>
+                        <p style={{ fontSize: '0.85rem', opacity: 0.85 }}>{c.body}</p>
+                      </div>
+                      {user && c.user_id === user.id && (
+                        <button onClick={() => deleteComment(c.id)} style={{ background: 'none', border: 'none', color: 'var(--muted-red)', cursor: 'pointer', fontSize: '0.75rem', fontFamily: 'Space Mono, monospace', opacity: 0.6 }}>✕</button>
+                      )}
+                    </div>
+                  ))}
+
+                  {user && !profile?.username ? (
+                    <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.6, marginTop: '0.5rem', fontStyle: 'italic' }}>
+                      Set a handle on your profile to comment.
+                    </p>
+                  ) : (
+                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                      <textarea
+                        value={commentDrafts[version.id] || ''}
+                        onChange={e => setCommentDrafts(prev => ({ ...prev, [version.id]: e.target.value }))}
+                        onFocus={() => { if (!user) { setAuthReason('comment'); setShowAuth(true) } }}
+                        placeholder="Leave a comment on this version..."
+                        rows={2}
+                        style={{ flex: 1, resize: 'vertical', fontSize: '0.85rem' }}
+                      />
+                      <button
+                        onClick={() => submitComment(version.id)}
+                        className="btn btn-sm"
+                        disabled={submittingComment[version.id]}
+                        style={{ alignSelf: 'flex-end' }}
+                      >
+                        {submittingComment[version.id] ? '...' : 'Post'}
+                      </button>
+                    </div>
                   )}
-                  {version.notes && <p style={{ fontSize: '0.85rem', opacity: 0.7, marginTop: '0.5rem' }}>{version.notes}</p>}
                 </div>
               </div>
 
-              {version.is_original && song.content_type === 'lyrics' ? (
-                <>
-                  <div style={{
-                    background: 'rgba(255,200,87,0.05)',
-                    padding: '1.5rem',
-                    marginTop: '0.75rem',
-                    fontFamily: 'Georgia, serif',
-                    fontSize: '1rem',
-                    lineHeight: 1.8,
-                    whiteSpace: 'pre-wrap',
-                    textAlign: 'center',
-                    color: 'var(--cream)',
-                    fontStyle: 'italic'
-                  }}>
-                    {song.lyrics_text}
-                  </div>
-                  <div style={{ marginTop: '0.5rem', textAlign: 'right' }}>
-                    <button
-                      onClick={() => navigator.clipboard.writeText(song.lyrics_text)}
-                      className="mono"
-                      style={{ background: 'none', border: 'none', fontSize: '0.7rem', color: 'var(--accent-yellow)', cursor: 'pointer', opacity: 0.7 }}
-                    >
-                      📋 Copy lyrics
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <audio controls style={{ width: '100%', marginTop: '0.75rem' }}>
-                    <source src={version.audio_url} />
-                  </audio>
-                  <div style={{ marginTop: '0.5rem', textAlign: 'right' }}>
-                    <a href={version.audio_url} download className="mono" style={{ fontSize: '0.7rem', color: 'var(--accent-yellow)', textDecoration: 'none', opacity: 0.7 }}>
-                      ↓ Download
-                    </a>
-                  </div>
-                </>
+              {/* Remix form for this version */}
+              {(showRemixFor === version.id || (showRemixFor === 'original' && version.is_original)) && (
+                <div style={{ marginLeft: `${indent}px`, marginBottom: '1rem' }}>
+                  <RemixForm
+                    songId={id}
+                    parentVersionId={version.is_original ? null : version.id}
+                    onSuccess={() => { setShowRemixFor(null); loadSong() }}
+                    onCancel={() => setShowRemixFor(null)}
+                  />
+                </div>
               )}
-
-              {/* Like + comment count bar */}
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem', alignItems: 'center' }}>
-                <button
-                  onClick={() => toggleLike(version.id)}
-                  disabled={liking}
-                  className="mono"
-                  style={{
-                    background: version.likedByMe ? 'var(--muted-red)' : 'transparent',
-                    border: '1px solid var(--muted-red)',
-                    color: version.likedByMe ? 'var(--cream)' : 'var(--muted-red)',
-                    padding: '0.3rem 0.8rem',
-                    cursor: liking ? 'wait' : 'pointer',
-                    fontSize: '0.85rem',
-                    fontFamily: 'Space Mono, monospace',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  {version.likedByMe ? '♥' : '♡'} {version.likeCount}
-                </button>
-                <span className="mono" style={{ fontSize: '0.75rem', opacity: 0.5 }}>
-                  💬 {versionComments.length}
-                </span>
-              </div>
-
-              {/* Comments thread for this version */}
-              <div style={{ marginTop: '1rem', borderTop: '1px solid rgba(255,107,53,0.15)', paddingTop: '0.75rem' }}>
-                {versionComments.map(c => (
-                  <div key={c.id} style={{ marginBottom: '0.6rem', borderLeft: '2px solid rgba(255,107,53,0.3)', paddingLeft: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
-                    <div style={{ flex: 1 }}>
-                      <p className="mono" style={{ fontSize: '0.7rem', color: 'var(--accent-yellow)', marginBottom: '0.15rem' }}>
-                        @{c.username}
-                        <span style={{ marginLeft: '0.5rem', opacity: 0.5 }}>{new Date(c.created_at).toLocaleDateString()}</span>
-                      </p>
-                      <p style={{ fontSize: '0.85rem', opacity: 0.85 }}>{c.body}</p>
-                    </div>
-                    {user && c.user_id === user.id && (
-                      <button onClick={() => deleteComment(c.id)} style={{ background: 'none', border: 'none', color: 'var(--muted-red)', cursor: 'pointer', fontSize: '0.75rem', fontFamily: 'Space Mono, monospace', opacity: 0.6 }}>✕</button>
-                    )}
-                  </div>
-                ))}
-
-                {/* Comment input — handle-gated */}
-                {user && !profile?.username ? (
-                  <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.6, marginTop: '0.5rem', fontStyle: 'italic' }}>
-                    Set a handle on your profile to comment.
-                  </p>
-                ) : (
-                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
-                    <textarea
-                      value={commentDrafts[version.id] || ''}
-                      onChange={e => setCommentDrafts(prev => ({ ...prev, [version.id]: e.target.value }))}
-                      onFocus={() => { if (!user) { setAuthReason('comment'); setShowAuth(true) } }}
-                      placeholder="Leave a comment on this version..."
-                      rows={2}
-                      style={{ flex: 1, resize: 'vertical', fontSize: '0.85rem' }}
-                    />
-                    <button
-                      onClick={() => submitComment(version.id)}
-                      className="btn btn-sm"
-                      disabled={submittingComment[version.id]}
-                      style={{ alignSelf: 'flex-end' }}
-                    >
-                      {submittingComment[version.id] ? '...' : 'Post'}
-                    </button>
-                  </div>
-                )}
-              </div>
             </div>
           )
         })}
