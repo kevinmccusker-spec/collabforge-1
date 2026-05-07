@@ -28,7 +28,7 @@ export default function Dashboard() {
         .order('created_at', { ascending: false }),
       supabase
         .from('versions')
-        .select('*, songs(title, user_id, profiles:user_id(username)), version_likes(count)')
+        .select('*, songs(title, user_id, public_profiles:user_id(username)), version_likes(count)')
         .eq('user_id', user.id)
         .eq('is_original', false)
         .order('created_at', { ascending: false })
@@ -116,7 +116,7 @@ export default function Dashboard() {
                   [{v.version_type?.toUpperCase() || 'CONTRIBUTION'}] {v.songs?.title}
                 </p>
                 <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.6 }}>
-                  {v.version_likes?.[0]?.count || 0} likes · original by @{v.songs?.profiles?.username} · {disclosureLabel(v.ai_disclosure)}
+                  {v.version_likes?.[0]?.count || 0} likes · original by @{v.songs?.public_profiles?.username} · {disclosureLabel(v.ai_disclosure)}
                 </p>
                 {v.contribution_notes && (
                   <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '0.25rem', fontStyle: 'italic' }}>
