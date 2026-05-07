@@ -37,23 +37,6 @@ export default function Dashboard() {
     setVersions(versionsData || [])
     setLoading(false)
   }
-    console.log('=== DASHBOARD DEBUG ===')
-    console.log('user.id:', user.id)
-    console.log('songsResponse:', songsResponse)
-    console.log('versionsResponse:', versionsResponse)
-    if (versionsResponse.error) {
-      console.error('VERSIONS QUERY ERROR:', versionsResponse.error)
-      console.error('Error message:', versionsResponse.error.message)
-      console.error('Error details:', versionsResponse.error.details)
-      console.error('Error hint:', versionsResponse.error.hint)
-      console.error('Error code:', versionsResponse.error.code)
-    }
-    console.log('======================')
-
-    setSongs(songsResponse.data || [])
-    setVersions(versionsResponse.data || [])
-    setLoading(false)
-  }
 
   function disclosureLabel(d) {
     if (d === 'human_made') return 'HUMAN'
