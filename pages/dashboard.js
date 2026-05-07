@@ -20,20 +20,23 @@ export default function Dashboard() {
 
   async function loadData() {
     setLoading(true)
-
-    const songsResponse = await supabase
-      .from('songs')
-      .select('*, versions!versions_song_id_fkey(id, version_likes(count))')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-
-    const versionsResponse = await supabase
-      .from('versions')
-      .select('*, songs(title, user_id), version_likes(count)')
-      .eq('user_id', user.id)
-      .eq('is_original', false)
-      .order('created_at', { ascending: false })
-
+    const [{ data: songsData }, { data: versionsData }] = await Promise.all([
+      supabase
+        .from('songs')
+        .select('*, versions!versions_song_id_fkey(id, version_likes(count))')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('versions')
+        .select('*, songs!versions_song_id_fkey(title, user_id, public_profiles:user_id(username)), version_likes(count)')
+        .eq('user_id', user.id)
+        .eq('is_original', false)
+        .order('created_at', { ascending: false })
+    ])
+    setSongs(songsData || [])
+    setVersions(versionsData || [])
+    setLoading(false)
+  }
     console.log('=== DASHBOARD DEBUG ===')
     console.log('user.id:', user.id)
     console.log('songsResponse:', songsResponse)
