@@ -14,7 +14,7 @@ export default function SongPlacard() {
   const [versions, setVersions] = useState([])
   const [comments, setComments] = useState([])
   const [loading, setLoading] = useState(true)
-  const [showRecord, setShowRecord] = useState(false)
+  const [showRecordFor, setShowRecordFor] = useState(null) // versionId or null
   const [showAuth, setShowAuth] = useState(false)
   const [authReason, setAuthReason] = useState(null)
   const [liking, setLiking] = useState(false)
@@ -41,12 +41,10 @@ export default function SongPlacard() {
       .eq('song_id', id)
       .order('created_at', { ascending: true })
 
-    // Collect all unique user_ids (song author + all version creators)
     const userIds = new Set()
     userIds.add(songData.user_id)
     ;(versionsData || []).forEach(v => userIds.add(v.user_id))
 
-    // Load profiles separately
     const { data: profilesData } = await supabase
       .from('public_profiles')
       .select('id, username')
@@ -55,7 +53,6 @@ export default function SongPlacard() {
     const profilesMap = {}
     ;(profilesData || []).forEach(p => { profilesMap[p.id] = p })
 
-    // Attach username to song and versions
     songData.public_profiles = profilesMap[songData.user_id] || null
 
     const enriched = (versionsData || []).map(v => ({
@@ -142,16 +139,31 @@ export default function SongPlacard() {
     setShowRemixFor(versionId)
   }
 
-  function getChainDepth(version, allVersions) {
-    let depth = 0
+  // Walks backwards from a version through parent_version_id to build the chain
+  function getChain(version, allVersions) {
+    const chain = [version]
     let current = version
     while (current?.parent_version_id) {
       const parent = allVersions.find(v => v.id === current.parent_version_id)
       if (!parent) break
-      depth++
+      chain.unshift(parent)
       current = parent
     }
-    return depth
+    return chain
+  }
+
+  // Calculates equal splits with the original rounding up on uneven divisions
+  function calculateSplits(chainLength) {
+    if (chainLength === 1) return [100]
+    const base = Math.floor(100 / chainLength)
+    const remainder = 100 - (base * chainLength)
+    const splits = Array(chainLength).fill(base)
+    splits[0] += remainder // original (first in chain) rounds up
+    return splits
+  }
+
+  function getChainDepth(version, allVersions) {
+    return getChain(version, allVersions).length - 1
   }
 
   function disclosureLabel(disclosure) {
@@ -161,7 +173,17 @@ export default function SongPlacard() {
     return 'HUMAN'
   }
 
+  function versionTypeLabel(version) {
+    if (version.is_original) return 'Original'
+    if (version.version_type === 'cover') return 'Cover'
+    return 'Cowrite'
+  }
+
   if (loading) return <div style={{ padding: '4rem', textAlign: 'center', fontFamily: 'Space Mono, monospace', color: 'var(--accent-yellow)' }}>Loading...</div>
+
+  const recordVersion = showRecordFor ? versions.find(v => v.id === showRecordFor) : null
+  const recordChain = recordVersion ? getChain(recordVersion, versions) : []
+  const recordSplits = recordChain.length > 0 ? calculateSplits(recordChain.length) : []
 
   return (
     <div style={{ position: 'relative', zIndex: 1 }}>
@@ -277,13 +299,22 @@ export default function SongPlacard() {
                   <span className="mono" style={{ fontSize: '0.75rem', opacity: 0.5 }}>
                     💬 {versionComments.length}
                   </span>
-                  <button
-                    onClick={() => handleBuildClick(version.is_original ? 'original' : version.id)}
-                    className="btn btn-sm"
-                    style={{ fontSize: '0.75rem', marginLeft: 'auto' }}
-                  >
-                    + Build From {version.is_original ? 'Original' : 'This Version'}
-                  </button>
+                  <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      onClick={() => handleBuildClick(version.id)}
+                      className="btn btn-sm"
+                      style={{ fontSize: '0.75rem' }}
+                    >
+                      + Build From {version.is_original ? 'Original' : 'This Version'}
+                    </button>
+                    <button
+                      onClick={() => setShowRecordFor(version.id)}
+                      className="btn btn-sm"
+                      style={{ fontSize: '0.75rem' }}
+                    >
+                      + Record
+                    </button>
+                  </div>
                 </div>
 
                 <div style={{ marginTop: '1rem', borderTop: '1px solid rgba(255,107,53,0.15)', paddingTop: '0.75rem' }}>
@@ -329,7 +360,7 @@ export default function SongPlacard() {
                 </div>
               </div>
 
-              {(showRemixFor === version.id || (showRemixFor === 'original' && version.is_original)) && (
+              {showRemixFor === version.id && (
                 <div style={{ marginLeft: `${indent}px`, marginBottom: '1rem' }}>
                   <RemixForm
                     songId={id}
@@ -343,14 +374,10 @@ export default function SongPlacard() {
           )
         })}
 
-        <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,107,53,0.25)', paddingTop: '2rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-          <button className="btn btn-sm" onClick={() => setShowRecord(true)}>+ Record</button>
-          <span className="mono" style={{ fontSize: '0.75rem', opacity: 0.5 }}>Lineage of contributions on this song</span>
-        </div>
-
+        {/* Distribution buttons */}
         <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,107,53,0.25)', paddingTop: '2rem' }}>
           <h2 className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '1rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: 1 }}>Distribute Your Version</h2>
-          <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.5, marginBottom: '1rem' }}>Anyone in the chain can release their version. Use the Record above for split sheet info.</p>
+          <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.5, marginBottom: '1rem' }}>Anyone in the chain can release their version. Use the Record on each version for split sheet info.</p>
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             <a href="https://distrokid.com/vip/seven/12298562" target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-primary">DistroKid</a>
             <a href="https://tunecore.com" target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-primary">TuneCore</a>
@@ -358,48 +385,49 @@ export default function SongPlacard() {
           </div>
         </div>
 
-        {showRecord && (
+        {/* Per-version Contribution Record Modal */}
+        {showRecordFor && recordVersion && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
             <div style={{ background: '#1a1a1a', border: '1px solid var(--burnt-orange)', maxWidth: 600, width: '100%', padding: '2.5rem', position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
-              <button onClick={() => setShowRecord(false)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--cream)', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
+              <button onClick={() => setShowRecordFor(null)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--cream)', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
 
               <p className="mono" style={{ fontSize: '0.7rem', opacity: 0.5, letterSpacing: 2, marginBottom: '1rem' }}>COLLABFORGE.IO · CONTRIBUTION RECORD</p>
-              <h2 className="mono" style={{ color: 'var(--burnt-orange)', fontSize: '1.5rem', marginBottom: '0.5rem' }}>{song.title}</h2>
+              <h2 className="mono" style={{ color: 'var(--burnt-orange)', fontSize: '1.5rem', marginBottom: '0.5rem' }}>
+                {song.title} — {versionTypeLabel(recordVersion)} by @{recordVersion.public_profiles?.username}
+              </h2>
               <p className="mono" style={{ fontSize: '0.8rem', opacity: 0.6, marginBottom: '2rem' }}>
-                Original by @{song.public_profiles?.username} · {new Date(song.created_at).toLocaleDateString()} · {disclosureLabel(song.ai_disclosure)}
+                Original by @{song.public_profiles?.username} · {new Date(song.created_at).toLocaleDateString()}
               </p>
 
-              <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.6, marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: 1 }}>Lineage</p>
+              <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.6, marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: 1 }}>
+                Chain — {recordChain.length} contributor{recordChain.length !== 1 ? 's' : ''}
+              </p>
 
-              {versions.map(version => {
-                const depth = getChainDepth(version, versions)
-                const chainLength = depth + 1
-                return (
-                  <div key={version.id} style={{
-                    borderLeft: `2px solid ${version.is_original ? 'var(--accent-yellow)' : 'var(--burnt-orange)'}`,
-                    paddingLeft: '1rem',
-                    marginLeft: `${depth * 16}px`,
-                    marginBottom: '1rem'
-                  }}>
-                    <p className="mono" style={{ fontSize: '0.85rem', marginBottom: '0.25rem' }}>
-                      {version.is_original ? '★ ORIGINAL' : `[${version.version_type?.toUpperCase()}]`} @{version.public_profiles?.username}
-                      {' · '}<span style={{ opacity: 0.6, fontSize: '0.7rem' }}>{disclosureLabel(version.ai_disclosure)}</span>
-                    </p>
-                    <p className="mono" style={{ fontSize: '0.7rem', opacity: 0.5 }}>{new Date(version.created_at).toLocaleString()}</p>
-                    {version.contribution_notes && (
-                      <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '0.25rem', fontStyle: 'italic' }}>"{version.contribution_notes}"</p>
-                    )}
-                    {!version.is_original && (
-                      <p className="mono" style={{ fontSize: '0.7rem', marginTop: '0.25rem', color: 'var(--accent-yellow)' }}>
-                        Chain depth: {depth} · Equal split among {chainLength + 1} contributors
-                      </p>
-                    )}
-                  </div>
-                )
-              })}
+              {recordChain.map((chainVersion, idx) => (
+                <div key={chainVersion.id} style={{
+                  borderLeft: `2px solid ${chainVersion.is_original ? 'var(--accent-yellow)' : 'var(--burnt-orange)'}`,
+                  paddingLeft: '1rem',
+                  marginBottom: '1rem'
+                }}>
+                  <p className="mono" style={{ fontSize: '0.85rem', marginBottom: '0.25rem' }}>
+                    {chainVersion.is_original ? '★ ORIGINAL' : `[${chainVersion.version_type?.toUpperCase()}]`}
+                    {' '}@{chainVersion.public_profiles?.username}
+                    {' · '}<span style={{ opacity: 0.6, fontSize: '0.7rem' }}>{disclosureLabel(chainVersion.ai_disclosure)}</span>
+                    {' · '}<span style={{ color: 'var(--accent-yellow)' }}>{recordSplits[idx]}%</span>
+                  </p>
+                  <p className="mono" style={{ fontSize: '0.7rem', opacity: 0.5 }}>{new Date(chainVersion.created_at).toLocaleString()}</p>
+                  {chainVersion.contribution_notes && (
+                    <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '0.25rem', fontStyle: 'italic' }}>"{chainVersion.contribution_notes}"</p>
+                  )}
+                </div>
+              ))}
 
-              <p className="mono" style={{ fontSize: '0.65rem', opacity: 0.4, marginTop: '2rem', lineHeight: 1.6 }}>
-                This is a timestamped record of contributions on CollabForge.io. The original artist is always at the root. Splits are equal among all contributors in a given version's chain. Use this record to fill out split sheets when distributing through DistroKid, CD Baby, or TuneCore. CollabForge records lineage but does not enforce splits or arbitrate disputes.
+              <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '1.5rem', marginBottom: '1rem', color: 'var(--accent-yellow)' }}>
+                Master recording: @{recordVersion.public_profiles?.username}
+              </p>
+
+              <p className="mono" style={{ fontSize: '0.65rem', opacity: 0.4, marginTop: '1.5rem', lineHeight: 1.6 }}>
+                This Record documents the chain of contributions made on CollabForge to this version. Splits are listed as equal among contributors. To release a recording of this song, take this Record to your distributor (DistroKid, CD Baby, TuneCore). CollabForge records lineage but does not enforce splits, host releases, or arbitrate disputes.
               </p>
 
               <button className="btn btn-sm" onClick={() => window.print()} style={{ marginTop: '1.5rem' }}>Print / Save PDF</button>
