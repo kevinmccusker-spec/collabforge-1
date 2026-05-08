@@ -6,9 +6,9 @@ export default function Header({ onSignIn, onUpload }) {
   const { user, profile } = useAuth()
 
   async function signOut() {
-  await supabase.auth.signOut()
-  window.location.href = '/'
-}
+    await supabase.auth.signOut()
+    window.location.href = '/'
+  }
 
   return (
     <header style={{
@@ -37,13 +37,14 @@ export default function Header({ onSignIn, onUpload }) {
             Give your song a place to grow
           </p>
         </div>
-
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           {user ? (
             <>
-              <span className="mono" style={{ fontSize: '0.85rem', color: 'var(--accent-yellow)' }}>
-                @{profile?.username}
-              </span>
+              <Link href="/profile/edit" style={{ textDecoration: 'none' }}>
+                <span className="mono" style={{ fontSize: '0.85rem', color: 'var(--accent-yellow)', cursor: 'pointer' }}>
+                  @{profile?.username}
+                </span>
+              </Link>
               <Link href="/dashboard" className="btn btn-sm">Dashboard</Link>
               <button className="btn btn-sm" onClick={onUpload}>+ Upload</button>
               <button className="btn btn-sm" onClick={signOut}>Sign Out</button>
