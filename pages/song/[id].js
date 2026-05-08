@@ -20,7 +20,7 @@ export default function SongPlacard() {
   const [liking, setLiking] = useState(false)
   const [commentDrafts, setCommentDrafts] = useState({})
   const [submittingComment, setSubmittingComment] = useState({})
-  const [showRemixFor, setShowRemixFor] = useState(null) // null | versionId | 'original'
+  const [showRemixFor, setShowRemixFor] = useState(null)
 
   useEffect(() => {
     if (id) loadSong()
@@ -29,7 +29,7 @@ export default function SongPlacard() {
   async function loadSong() {
     const { data: songData } = await supabase
       .from('songs')
-      .select('*, public_profiles:user_id(username)')
+      .select('*')
       .eq('id', id)
       .single()
 
@@ -37,12 +37,30 @@ export default function SongPlacard() {
 
     const { data: versionsData } = await supabase
       .from('versions')
-      .select('*, public_profiles:user_id(username), version_likes(user_id)')
+      .select('*, version_likes(user_id)')
       .eq('song_id', id)
       .order('created_at', { ascending: true })
 
+    // Collect all unique user_ids (song author + all version creators)
+    const userIds = new Set()
+    userIds.add(songData.user_id)
+    ;(versionsData || []).forEach(v => userIds.add(v.user_id))
+
+    // Load profiles separately
+    const { data: profilesData } = await supabase
+      .from('public_profiles')
+      .select('id, username')
+      .in('id', Array.from(userIds))
+
+    const profilesMap = {}
+    ;(profilesData || []).forEach(p => { profilesMap[p.id] = p })
+
+    // Attach username to song and versions
+    songData.public_profiles = profilesMap[songData.user_id] || null
+
     const enriched = (versionsData || []).map(v => ({
       ...v,
+      public_profiles: profilesMap[v.user_id] || null,
       likeCount: v.version_likes?.length || 0,
       likedByMe: user ? v.version_likes?.some(l => l.user_id === user.id) : false
     }))
@@ -163,7 +181,6 @@ export default function SongPlacard() {
           {song.description && <p style={{ marginTop: '0.75rem', opacity: 0.8 }}>{song.description}</p>}
         </div>
 
-        {/* Versions / Chain */}
         <h2 className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '1rem', marginBottom: '1.5rem', textTransform: 'uppercase', letterSpacing: 1 }}>Contribution Record</h2>
 
         {versions.map(version => {
@@ -239,7 +256,6 @@ export default function SongPlacard() {
                   </>
                 )}
 
-                {/* Like + comment count + Build bar */}
                 <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
                   <button
                     onClick={() => toggleLike(version.id)}
@@ -270,7 +286,6 @@ export default function SongPlacard() {
                   </button>
                 </div>
 
-                {/* Comments thread for this version */}
                 <div style={{ marginTop: '1rem', borderTop: '1px solid rgba(255,107,53,0.15)', paddingTop: '0.75rem' }}>
                   {versionComments.map(c => (
                     <div key={c.id} style={{ marginBottom: '0.6rem', borderLeft: '2px solid rgba(255,107,53,0.3)', paddingLeft: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
@@ -314,7 +329,6 @@ export default function SongPlacard() {
                 </div>
               </div>
 
-              {/* Remix form for this version */}
               {(showRemixFor === version.id || (showRemixFor === 'original' && version.is_original)) && (
                 <div style={{ marginLeft: `${indent}px`, marginBottom: '1rem' }}>
                   <RemixForm
@@ -329,13 +343,11 @@ export default function SongPlacard() {
           )
         })}
 
-        {/* Contribution Record button */}
         <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,107,53,0.25)', paddingTop: '2rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
           <button className="btn btn-sm" onClick={() => setShowRecord(true)}>+ Record</button>
           <span className="mono" style={{ fontSize: '0.75rem', opacity: 0.5 }}>Lineage of contributions on this song</span>
         </div>
 
-        {/* Distribution buttons */}
         <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,107,53,0.25)', paddingTop: '2rem' }}>
           <h2 className="mono" style={{ color: 'var(--accent-yellow)', fontSize: '1rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: 1 }}>Distribute Your Version</h2>
           <p className="mono" style={{ fontSize: '0.75rem', opacity: 0.5, marginBottom: '1rem' }}>Anyone in the chain can release their version. Use the Record above for split sheet info.</p>
@@ -346,7 +358,6 @@ export default function SongPlacard() {
           </div>
         </div>
 
-        {/* Contribution Record Modal */}
         {showRecord && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
             <div style={{ background: '#1a1a1a', border: '1px solid var(--burnt-orange)', maxWidth: 600, width: '100%', padding: '2.5rem', position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -396,7 +407,6 @@ export default function SongPlacard() {
           </div>
         )}
 
-        {/* Auth Modal */}
         {showAuth && (
           <AuthModal
             onClose={() => { setShowAuth(false); setAuthReason(null); loadSong() }}
