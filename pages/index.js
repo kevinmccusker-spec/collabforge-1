@@ -8,69 +8,74 @@ import UploadModal from '../components/UploadModal'
 
 export default function Home() {
   const { user, profile } = useAuth()
-  const [songs, setSongs] = useState([])
+  const [rows, setRows] = useState([]) // each row = a version with song context
   const [loading, setLoading] = useState(true)
   const [showAuth, setShowAuth] = useState(false)
   const [showUpload, setShowUpload] = useState(false)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all') // 'all' | 'human' | 'ai'
 
-  useEffect(() => { loadSongs() }, [])
+  useEffect(() => { loadVersions() }, [user])
 
-  async function loadSongs() {
+  async function loadVersions() {
     setLoading(true)
-    const { data, error } = await supabase
+
+    const { data: songs } = await supabase
       .from('songs')
-      .select(`
-        *,
-        versions!versions_song_id_fkey(
-          *,
-          public_profiles:user_id(username),
-          version_likes(count)
-        )
-      `)
-      .order('created_at', { ascending: false })
+      .select('id, title')
 
-    if (!error && data) {
-      const formatted = data.map(song => ({
-        ...song,
-        originalAuthor: song.username,
-        versions: (song.versions || [])
-          .map(v => ({
-            ...v,
-            creator: v.public_profiles?.username,
-            likeCount: v.version_likes?.[0]?.count || 0
-          }))
-          .sort((a, b) => {
-            if (a.is_original) return -1
-            if (b.is_original) return 1
-            return b.likeCount - a.likeCount
-          })
+    const { data: versions } = await supabase
+      .from('versions')
+      .select('*, version_likes(user_id)')
+
+    if (!songs || !versions) {
+      setLoading(false)
+      return
+    }
+
+    // Build a song lookup
+    const songMap = {}
+    songs.forEach(s => { songMap[s.id] = s })
+
+    // Get all unique user_ids from versions
+    const userIds = [...new Set(versions.map(v => v.user_id))]
+    const { data: profiles } = await supabase
+      .from('public_profiles')
+      .select('id, username')
+      .in('id', userIds)
+
+    const profileMap = {}
+    ;(profiles || []).forEach(p => { profileMap[p.id] = p })
+
+    // Build the flat list of rows (each = one version)
+    const flatRows = versions
+      .filter(v => songMap[v.song_id]) // skip orphans
+      .map(v => ({
+        ...v,
+        songTitle: songMap[v.song_id].title,
+        creator: profileMap[v.user_id]?.username || '',
+        likeCount: v.version_likes?.length || 0,
+        likedByMe: user ? v.version_likes?.some(l => l.user_id === user.id) : false
       }))
-
-      // Sort songs by most-liked version's count, ties default to original
-      formatted.sort((a, b) => {
-        const aMax = Math.max(...a.versions.map(v => v.likeCount), 0)
-        const bMax = Math.max(...b.versions.map(v => v.likeCount), 0)
-        if (bMax !== aMax) return bMax - aMax
-        // Tie: fall back to created_at, newest first
+      .sort((a, b) => {
+        if (b.likeCount !== a.likeCount) return b.likeCount - a.likeCount
+        // Tie: newer first
         return new Date(b.created_at) - new Date(a.created_at)
       })
 
-      setSongs(formatted)
-    }
+    setRows(flatRows)
     setLoading(false)
   }
 
-  const filtered = songs.filter(s => {
+  const filtered = rows.filter(v => {
     const matchesSearch =
-      s.title?.toLowerCase().includes(search.toLowerCase()) ||
-      s.description?.toLowerCase().includes(search.toLowerCase())
+      v.songTitle?.toLowerCase().includes(search.toLowerCase()) ||
+      v.creator?.toLowerCase().includes(search.toLowerCase())
 
     const matchesFilter =
       filter === 'all' ||
-      (filter === 'human' && s.ai_disclosure === 'human_made') ||
-      (filter === 'ai' && (s.ai_disclosure === 'ai_assisted' || s.ai_disclosure === 'pure_ai'))
+      (filter === 'human' && v.ai_disclosure === 'human_made') ||
+      (filter === 'ai' && (v.ai_disclosure === 'ai_assisted' || v.ai_disclosure === 'pure_ai'))
 
     return matchesSearch && matchesFilter
   })
@@ -84,11 +89,10 @@ export default function Home() {
 
       <main style={{ maxWidth: 900, margin: '0 auto', padding: '2rem' }}>
 
-        {/* Search and filter */}
         <div style={{ marginBottom: '2rem', display: 'grid', gap: '0.75rem' }}>
           <input
             type="text"
-            placeholder="Search songs by title or mood..."
+            placeholder="Search by song title or @handle..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -126,16 +130,15 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Songs */}
         {loading ? (
           <div className="mono" style={{ textAlign: 'center', padding: '4rem', color: 'var(--accent-yellow)' }}>
-            Loading songs...
+            Loading...
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '4rem', opacity: 0.5 }}>
             <p className="mono" style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>
               {search || filter !== 'all'
-                ? 'No songs match your search.'
+                ? 'Nothing matches your search.'
                 : 'No songs yet. Be the first to release one to the hive mind.'}
             </p>
             {!user && (
@@ -146,11 +149,13 @@ export default function Home() {
           </div>
         ) : (
           <div style={{ display: 'grid', gap: '0.5rem' }}>
-            {filtered.map(song => (
+            {filtered.map(version => (
               <SongCard
-                key={song.id}
-                song={song}
-                onUpdate={loadSongs}
+                key={version.id}
+                version={version}
+                songTitle={version.songTitle}
+                songId={version.song_id}
+                onUpdate={loadVersions}
                 onAuthRequired={() => setShowAuth(true)}
               />
             ))}
@@ -163,7 +168,7 @@ export default function Home() {
       {showUpload && (
         <UploadModal
           onClose={() => setShowUpload(false)}
-          onSuccess={() => { setShowUpload(false); loadSongs() }}
+          onSuccess={() => { setShowUpload(false); loadVersions() }}
         />
       )}
     </div>
