@@ -18,6 +18,21 @@ export default function AuthModal({ onClose, reason }) {
 
     try {
       if (mode === 'signup') {
+        // Sanitize username: trim whitespace, replace internal spaces with underscores
+        const cleanUsername = username.trim().replace(/\s+/g, '_')
+
+        if (!cleanUsername) {
+          setError('Username cannot be empty.')
+          setLoading(false)
+          return
+        }
+
+        if (!/^[a-zA-Z0-9_]+$/.test(cleanUsername)) {
+          setError('Username can only contain letters, numbers, and underscores.')
+          setLoading(false)
+          return
+        }
+
         // Sign up
         const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
         if (signUpError) throw signUpError
@@ -26,7 +41,7 @@ export default function AuthModal({ onClose, reason }) {
         if (data.user) {
           const { error: profileError } = await supabase
             .from('profiles')
-            .upsert({ id: data.user.id, username, email })
+            .upsert({ id: data.user.id, username: cleanUsername, email })
           if (profileError) throw profileError
         }
 
