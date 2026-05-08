@@ -47,6 +47,16 @@ export default function Home() {
             return b.likeCount - a.likeCount
           })
       }))
+
+      // Sort songs by most-liked version's count, ties default to original
+      formatted.sort((a, b) => {
+        const aMax = Math.max(...a.versions.map(v => v.likeCount), 0)
+        const bMax = Math.max(...b.versions.map(v => v.likeCount), 0)
+        if (bMax !== aMax) return bMax - aMax
+        // Tie: fall back to created_at, newest first
+        return new Date(b.created_at) - new Date(a.created_at)
+      })
+
       setSongs(formatted)
     }
     setLoading(false)
@@ -135,7 +145,7 @@ export default function Home() {
             )}
           </div>
         ) : (
-          <div style={{ display: 'grid', gap: '2.5rem' }}>
+          <div style={{ display: 'grid', gap: '0.5rem' }}>
             {filtered.map(song => (
               <SongCard
                 key={song.id}
